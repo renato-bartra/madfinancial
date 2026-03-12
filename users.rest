@@ -1,0 +1,59 @@
+### Users Login
+POST http://localhost:4000/api/v1/users/login
+Content-Type: application/json
+
+{
+    "email": "rbr1994@hotmail.com",
+    "password": "renato"
+}
+
+### users create
+POST http://localhost:4000/api/v1/users
+Content-Type: application/json
+
+{
+    "user_id":1,
+    "first_name": "Sahron julvic",
+    "last_name": "Pinedo Arce",
+    "dni": "71721506",
+    "email": "sjpa@gmail.com",
+    "password": "sharon",
+    "active": true,
+    "image":""
+}
+
+### Users Update
+PUT http://localhost:4000/api/v1/users/2
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aWlpaSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzIxMjUyNTQsImV4cCI6MTc3MjEzNjA1NH0.CJvBglrv4Ly-CzRWbiUiX5EgCzOx4e008OiWB8I7FTY
+
+{
+    "user_id":2,
+    "first_name": "Sharon Julvic",
+    "last_name": "Pinedo Arce",
+    "dni": "74212862",
+    "email": "sjpa@gmail.com",
+    "password": "sharon",
+    "active": true,
+    "image":""
+}
+
+### DELETE user
+DELETE http://localhost:4000/api/v1/users/2
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aWlpaSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzIxMjUyNTQsImV4cCI6MTc3MjEzNjA1NH0.CJvBglrv4Ly-CzRWbiUiX5EgCzOx4e008OiWB8I7FTY
+
+
+### Get all users
+GET http://localhost:4000/api/v1/users/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzIwNjA2NTMsImV4cCI6MTc3MjA3MTQ1M30.3_geS4OdD_OkYZr0Tv4ityCiKQ6ed_4-wPk_6gQadig
+
+### forgot password
+
+POST http://localhost:4000/api/v1/forgot-password
+Content-Type: application/json
+
+{
+    "email": "rbr1994@hotmail.com"
+}
