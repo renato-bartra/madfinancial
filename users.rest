@@ -13,11 +13,11 @@ Content-Type: application/json
 
 {
     "user_id":1,
-    "first_name": "Sahron julvic",
-    "last_name": "Pinedo Arce",
+    "first_name": "Renato",
+    "last_name": "bartra Reategui",
     "dni": "71721506",
-    "email": "sjpa@gmail.com",
-    "password": "sharon",
+    "email": "rbr1994@hotmail.com",
+    "password": "renato",
     "active": true,
     "image":""
 }
@@ -25,15 +25,15 @@ Content-Type: application/json
 ### Users Update
 PUT http://localhost:4000/api/v1/users/2
 Content-Type: application/json
-authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aWlpaSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzIxMjUyNTQsImV4cCI6MTc3MjEzNjA1NH0.CJvBglrv4Ly-CzRWbiUiX5EgCzOx4e008OiWB8I7FTY
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIGJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM0Mzk1MjEsImV4cCI6MTc3MzQ1MDMyMX0.R4gpE7zRQuY4gzLM2WLUyf-VsHcnpAQnRYCI20RsDdU
 
 {
     "user_id":2,
-    "first_name": "Sharon Julvic",
-    "last_name": "Pinedo Arce",
-    "dni": "74212862",
-    "email": "sjpa@gmail.com",
-    "password": "sharon",
+    "first_name": "Renato",
+    "last_name": "Bartra Reategui",
+    "dni": "71721506",
+    "email": "rbr1994@hotmail.com",
+    "password": "renato",
     "active": true,
     "image":""
 }
@@ -56,4 +56,69 @@ Content-Type: application/json
 
 {
     "email": "rbr1994@hotmail.com"
+}
+
+
+### Get all tags
+GET http://localhost:4000/api/v1/tags/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM2ODczMDUsImV4cCI6MTc3MzY5ODEwNX0.aQP_N5SVza6MSh8cNZHUSNw1QNbIWnvsfLldVFPki5A
+
+{
+    "user_id": 2
+}
+
+### create tags
+POST http://localhost:4000/api/v1/tags/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM2ODczMDUsImV4cCI6MTc3MzY5ODEwNX0.aQP_N5SVza6MSh8cNZHUSNw1QNbIWnvsfLldVFPki5A
+
+{
+    "user_id": 2,
+    "tag_id": 1,
+    "description": "Carimi"
+}
+
+
+### Get all categories
+GET http://localhost:4000/api/v1/categories/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM3OTA2OTgsImV4cCI6MTc3MzgwMTQ5OH0.dVHljS94VLeCyOO3CSl7-16TIlh6qT5w0z17nVmsABE
+
+{
+    "user_id": 2
+}
+
+### create categories
+POST http://localhost:4000/api/v1/categories/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM3OTA2OTgsImV4cCI6MTc3MzgwMTQ5OH0.dVHljS94VLeCyOO3CSl7-16TIlh6qT5w0z17nVmsABE
+
+{
+    "user_id": 2,
+    "category_id": 1,
+    "category_type": true,
+    "description": "Transferencia"
+}
+
+
+
+### Get all accounts
+GET http://localhost:4000/api/v1/accounts/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM5NjY4MTAsImV4cCI6MTc3Mzk3NzYxMH0.RwdlnJM-Fx4k-FsGS_ExEVHb4HWjzUWGOvxdyIo_uXI
+
+{
+    "user_id": 2
+}
+
+### create account
+POST http://localhost:4000/api/v1/accounts/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzM5NjY4MTAsImV4cCI6MTc3Mzk3NzYxMH0.RwdlnJM-Fx4k-FsGS_ExEVHb4HWjzUWGOvxdyIo_uXI
+
+{
+    "user_id": 2,
+    "account_id": 1,
+    "description": "Efectivo"
 }

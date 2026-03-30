@@ -1,7 +1,6 @@
 import { User, UserID } from "../../../domain/entities/User";
 import { UserRepository } from "../../../domain/repositories/UserRepository";
 import { DBConfig } from "../../../../../config/DBConfig";
-//import { MySQLExecuteAdapter } from "../../../../shared/infraestructure/adapters/MySQL/MySQLExecuteAdapter";
 import postgres from "postgres";
 import { EntityNotFoundException } from "../../../../shared/domain/exeptions/EntityNotFoundException";
 import { DataBaseException } from "../../../../shared/domain/exeptions/DataBaseException";
@@ -26,9 +25,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return response;
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
   /* -------------------------------------------------------------------------- */
@@ -47,9 +46,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return response[0]
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
 
@@ -64,9 +63,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return response[0];
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
   /* -------------------------------------------------------------------------- */
@@ -80,9 +79,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return response[0];
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
   /* -------------------------------------------------------------------------- */
@@ -105,9 +104,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return user;
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
   /* -------------------------------------------------------------------------- */
@@ -123,9 +122,9 @@ export class PostgreSQLUserRepository implements UserRepository {
       return true;
     }catch(err){
       if (err instanceof Error){
-        throw new DataBaseException(err.message)
+        return err.message
       }
-      throw new Error("Hubo un error inesperado")
+      return "Hubo un error inesperado"
     }
   };
 }

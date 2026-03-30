@@ -1,5 +1,5 @@
 import { DomainRepository } from "../../../shared/domain/repositories/DomainRepository";
-import { User, UserID } from "../entities/User";
+import { User } from "../entities/User";
 
 export interface UserRepository extends DomainRepository{
   getAll: () => Promise<User[]|string>;
