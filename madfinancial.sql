@@ -155,7 +155,7 @@ CREATE INDEX idx_movements_active_id ON financial.t_movements (active);
 -- =====================================================
 DROP TABLE IF EXISTS financial.t_submovements;
 CREATE TABLE financial.t_submovements (
-    submovement_id BIGINT NOT NULL,
+    submovement_id BIGINT GENERATED ALWAYS AS IDENTITY,
     movement_id BIGINT NOT NULL,
     subcategory_id BIGINT,
     title VARCHAR(150) NOT NULL,
@@ -172,6 +172,7 @@ CREATE TABLE financial.t_submovements (
 
 CREATE INDEX idx_submovements_movement ON financial.t_submovements (movement_id);
 CREATE INDEX idx_submovements_subcategory ON financial.t_submovements (subcategory_id);
+CREATE INDEX idx_submovements_active ON financial.t_submovements (active);
 
 -- =====================================================
 -- MOVEMENTS-TAGS
@@ -950,15 +951,15 @@ AS $$
 DECLARE 
     v_movement_id BIGINT;
     v_submovement_id BIGINT;
-    sub RECORD;
+    sub JSONB;
 BEGIN
     -- Primero incerta el mivimiento para sacar el movement_id
-    INSERT INTO financial.t_movements (user_id, type_id, category_id, account_id, title, amount, description, accounting_date)
+    INSERT INTO financial.t_movements AS mv (user_id, type_id, category_id, account_id, title, amount, description, accounting_date)
     VALUES (in_user_id, in_type_id, in_category_id, in_account_id, in_title, in_amount, in_description, in_accounting_date)
-    RETURNING movement_id INTO v_movement_id;
+    RETURNING mv.movement_id INTO v_movement_id;
 
     -- valida si tiene tags
-    IF COALESCE(jsonb_array_length(in_tags),0) > 0 THEN
+    IF jsonb_array_length(in_tags) > 0 THEN
         -- Si tiene tags los incerta usando el movement_id que consiguió en el proceso anterior
         INSERT INTO financial.t_movements_tags(movement_id, tag_id)
         SELECT
@@ -969,14 +970,14 @@ BEGIN
     END IF;
 
     -- Valida si tiene submovements
-    IF COALESCE(jsonb_array_length(in_submovements),0) > 0 THEN
+    IF jsonb_array_length(in_submovements) > 0 THEN
         -- hace un loop para conseguir el submovement_id
         FOR sub IN
-            SELECT * 
+            SELECT value
             FROM jsonb_array_elements(in_submovements)
         LOOP
             -- iserta el submovements y consigue el submovement_id
-            INSERT INTO financial.t_submovements
+            INSERT INTO financial.t_submovements AS smv
             (
                 movement_id,
                 subcategory_id,
@@ -992,16 +993,16 @@ BEGIN
                 (sub->>'amount')::DECIMAL(12,2),
                 sub->>'description'
             )
-            RETURNING submovement_id INTO v_submovement_id;
+            RETURNING smv.submovement_id INTO v_submovement_id;
 
-            IF COALESCE(jsonb_array_length(sub->'tags'),0) > 0 THEN
+            IF jsonb_array_length(sub->'tags') > 0 THEN
 
                 -- inserta tags con el submovement_id del proceso anterior
                 INSERT INTO financial.t_submovements_tags (submovement_id, tag_id)
                 SELECT
                     v_submovement_id,
-                    (tg->>'tag_id')::BIGINT
-                FROM jsonb_array_elements(sub->'tags') tg;
+                    (stg->>'tag_id')::BIGINT
+                FROM jsonb_array_elements(sub->'tags') stg;
 
             END IF;
 
@@ -1011,17 +1012,17 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        mv.movement_id
-        ,mv.user_id
-        ,mv.title
-        ,mv.description
-        ,mv.amount
-        ,mv.accounting_date
-        ,mv.type
-        ,mv.category
-        ,mv.account
-        ,mv.tags
-        ,mv.submovements
+        mv.movement_id,
+        mv.user_id,
+        mv.title,
+        mv.description,
+        mv.amount,
+        mv.accounting_date,
+        mv.type,
+        mv.category,
+        mv.account,
+        mv.tags,
+        mv.submovements
     FROM financial.vw_movements mv
     WHERE mv.movement_id = v_movement_id;
 END;
@@ -1066,5 +1067,89 @@ BEGIN
     WHERE 
         mv.user_id = in_user_id
         AND mv.accounting_date = in_accounting_date;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS financial.sp_movements_delete;
+
+CREATE OR REPLACE FUNCTION financial.sp_movements_delete(
+    in_movement_id BIGINT
+)
+RETURNS BIGINT
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    
+    WITH movements AS (
+        SELECT
+            mv.movement_id
+        FROM financial.t_movements mv
+        WHERE mv.movement_id = in_movement_id
+    )
+    UPDATE financial.t_submovements sm
+    SET
+        active = FALSE
+        ,deleted_at = CURRENT_TIMESTAMP
+    FROM movements cmv
+    WHERE sm.movement_id = cmv.movement_id;
+
+    UPDATE financial.t_movements mv
+    SET
+        active = FALSE
+        ,deleted_at = CURRENT_TIMESTAMP
+    WHERE mv.movement_id = in_movement_id;
+
+    RETURN in_movement_id;
+
+END;
+$$;
+
+DROP FUNCTION IF EXISTS financial.sp_movements_update;
+
+CREATE OR REPLACE FUNCTION financial.sp_movements_update(
+    in_movement_id BIGINT,
+    in_user_id BIGINT,
+    in_type_id BIGINT,
+    in_category_id BIGINT,
+    in_account_id BIGINT,
+    in_title VARCHAR(150),
+    in_amount DECIMAL(12,2),
+    in_description VARCHAR(500),
+    in_accounting_date DATE,
+    in_tags JSONB,
+    in_submovements JSONB
+)
+RETURNS TABLE (
+    movement_id BIGINT,
+    user_id BIGINT,
+    title VARCHAR,
+    description VARCHAR,
+    amount NUMERIC,
+    accounting_date DATE,
+    type JSONB,
+    category JSONB,
+    account JSONB,
+    tags JSONB,
+    submovements JSONB
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+
+    SELECT financial.sp_movements_delete(in_movement_id);
+    
+    RETURN QUERY SELECT * FROM financial.sp_movements_create(
+        in_user_id
+        ,in_type_id
+        ,in_category_id
+        ,in_account_id
+        ,in_title
+        ,in_amount
+        ,in_description
+        ,in_accounting_date
+        ,in_tags
+        ,in_submovements
+    );
+
 END;
 $$;
