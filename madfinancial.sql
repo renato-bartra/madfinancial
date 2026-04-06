@@ -189,7 +189,7 @@ CREATE TABLE financial.t_movements_tags (
 -- =====================================================
 -- SUBMOVEMENTS-TAGS
 -- =====================================================
-DROP TABLE IF EXISTS financial.t_submovements_tags;
+DROP TABLE financial.t_submovements_tags;
 CREATE TABLE financial.t_submovements_tags (
     submovement_id BIGINT NOT NULL,
     tag_id BIGINT NOT NULL,
@@ -1136,9 +1136,22 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
 
-    SELECT financial.sp_movements_delete(in_movement_id);
+    PERFORM financial.sp_movements_delete(in_movement_id);
     
-    RETURN QUERY SELECT * FROM financial.sp_movements_create(
+    RETURN QUERY
+    SELECT 
+        nmv.movement_id,
+        nmv.user_id,
+        nmv.title,
+        nmv.description,
+        nmv.amount,
+        nmv.accounting_date,
+        nmv.type,
+        nmv.category,
+        nmv.account,
+        nmv.tags,
+        nmv.submovements
+    FROM financial.sp_movements_create(
         in_user_id
         ,in_type_id
         ,in_category_id
@@ -1149,7 +1162,7 @@ BEGIN
         ,in_accounting_date
         ,in_tags
         ,in_submovements
-    );
+    ) nmv;
 
 END;
 $$;

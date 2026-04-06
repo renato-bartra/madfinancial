@@ -177,3 +177,69 @@ authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVu
         }
     ]
 }
+
+### get movements by date
+GET http://localhost:4000/api/v1/movements/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzQ5MDk3OTAsImV4cCI6MTc3NDkyMDU5MH0.TEjWDqVtDKOZzmtVlNrZXADg7L0uEmHqhFoArhJIl6k
+
+{"accounting_date": "2026-03-31"}
+
+### Delete movements
+DELETE http://localhost:4000/api/v1/movements/18
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzU0NDM0ODQsImV4cCI6MTc3NTQ1NDI4NH0.fVgnahu12fZvr-girPXOA0QWa5SxI2eOCtb5RrI6gnw
+
+### Update movement
+PUT http://localhost:4000/api/v1/movements/23
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzQ5MDk3OTAsImV4cCI6MTc3NDkyMDU5MH0.TEjWDqVtDKOZzmtVlNrZXADg7L0uEmHqhFoArhJIl6k
+
+{
+    "movement_id":1,
+    "user_id": 2,
+    "title":"Compras semana",
+    "description": "Compras semana en Plaza Vea",
+    "amount":100,
+    "accounting_date": "2026-03-31",
+    "type":{
+        "type_id":2,
+        "description":"Gasto"
+    },
+    "category":{
+        "category_id":3,
+        "category_type": true,
+        "description":"Supermercado"
+    },
+    "account":{
+        "account_id":1,
+        "description":"Sueldo"
+    },
+    "tags":[],
+    "submovements": [
+        {
+            "submovement_id": 1,
+            "subcategory": {
+                "category_id":13,
+                "category_type": true,
+                "description":"Limpieza"
+            },
+            "amount": 40,
+            "description": "Shampoo Carimi",
+            "tags": [
+                {"tag_id":2,"description":"Carimi"}
+            ]
+        },
+        {
+            "submovement_id": 1,
+            "subcategory": {
+                "category_id":1,
+                "category_type": true,
+                "description":"Comida"
+            },
+            "amount": 60,
+            "description": "Comida para casa",
+            "tags": []
+        }
+    ]
+}
