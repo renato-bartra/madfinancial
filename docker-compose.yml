@@ -1,0 +1,48 @@
+services:
+
+  postgres:
+    image: postgres:18.3-trixie
+    container_name: madfinancial-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: renato7172
+      POSTGRES_DB: madfinancial
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - ./madfinancial_database:/var/lib/postgresql
+      - ./madfinancial_database/initdb:/docker-entrypoint-initdb.d
+
+    networks:
+      - madfinancial-network
+
+
+  api:
+    build:
+        context: ./madfinancial_api
+
+    container_name: madfinancial_api
+
+    restart: unless-stopped
+
+    ports:
+      - "4000:4000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      - postgres
+
+    networks:
+      - madfinancial-network
+
+
+networks:
+  madfinancial-network:
+    driver: bridge

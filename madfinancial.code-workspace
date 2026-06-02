@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"sqltools.connections": [
+			{
+				"ssh": "Disabled",
+				"previewLimit": 50,
+				"server": "localhost",
+				"port": 5432,
+				"driver": "PostgreSQL",
+				"name": "madfinancialdb",
+				"database": "madfinancial",
+				"username": "renato",
+				"password": "renato7172"
+			},
+			{
+				"ssh": "Disabled",
+				"previewLimit": 50,
+				"server": "localhost",
+				"port": 5433,
+				"driver": "PostgreSQL",
+				"name": "dockerimage",
+				"database": "madfinancial",
+				"username": "postgres",
+				"password": "renato7172"
+			}
+		]
+	}
+}
