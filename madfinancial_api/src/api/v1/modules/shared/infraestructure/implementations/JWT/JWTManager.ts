@@ -22,7 +22,8 @@ export class JWTManager implements TokenManager {
   make = async (params: ITokenObject): Promise<string> => {
     let token: string = "";
     try {
-      token = jwt.sign(params, this.jwtSecret, { expiresIn: "3h" });
+      this.jwtValidator = false;
+      token = jwt.sign(params, this.jwtSecret, { expiresIn: "1d" });
     } catch (error) {
       token = "";
       this.jwtValidator = true;
@@ -37,16 +38,13 @@ export class JWTManager implements TokenManager {
   verify = (token: string): ITokenObject => {
     let verifyToken: ITokenObject = { sub: 1, son: "", ema: "", tou: [] };
     try {
+      this.jwtValidator = false;
       verifyToken = jwt.verify(token, this.jwtSecret) as any;
-      if(verifyToken.sub) {
-        this.jwtValidator = false;
-        return verifyToken;
-      }
+      return verifyToken;
     } catch (error) {
       this.jwtValidator = true;
       if (error instanceof TokenExpiredError){
-        this.jwtError =
-          `El token a expirado, por favor vuelva a realizar un login`;
+        this.jwtError = "El token a expirado";
       }
       else if (error instanceof JsonWebTokenError)
         this.jwtError =
@@ -63,6 +61,7 @@ export class JWTManager implements TokenManager {
   makeForResetPass = async (params: ITokenObject): Promise<string> => {
     let token: string = "";
     try {
+      this.jwtValidator = false;
       token = jwt.sign(params, this.jwtMailSecret, { expiresIn: 5*60 });
     } catch (error) {
       token = "";
@@ -78,6 +77,7 @@ export class JWTManager implements TokenManager {
   verifyForResetPass = (token: string): ITokenObject => {
     let verifyToken: ITokenObject = { sub: 1, son: "", ema: "", tou: [] };
     try {
+      this.jwtValidator = false;
       verifyToken = jwt.verify(token, this.jwtMailSecret) as any;
       if(verifyToken.sub) {
         this.jwtValidator = false;
@@ -87,7 +87,7 @@ export class JWTManager implements TokenManager {
       this.jwtValidator = true;
       if (error instanceof TokenExpiredError)
         this.jwtError =
-          "El token a expirado, por favor vuelva a intentarlo";
+          "El token a expirado";
       else if (error instanceof JsonWebTokenError)
         this.jwtError =
           "El token sufrió una malformación, por favor vuelva a intentarlo";

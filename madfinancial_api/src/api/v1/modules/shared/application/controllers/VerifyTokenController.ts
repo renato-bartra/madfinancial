@@ -3,6 +3,7 @@ import { TokenException } from "../../domain/exeptions/TokenException";
 import { IResponseObject } from "../../domain/repositories/IResponseObject";
 import { TokenManager } from "../../domain/repositories/TokenManager";
 import { JWTManager } from "../../infraestructure/implementations/JWT/JWTManager";
+import { TokenExpiredException } from "../../domain/exeptions/TokenExpiredException";
 
 export class VerifyTokenController {
   private data: IResponseObject = { code: 0, message: "", body: [] };
@@ -14,27 +15,33 @@ export class VerifyTokenController {
       const tokenVerify: boolean = await verifyTokenUseCase.verify(token, roles);
       if (!tokenVerify) {
         return this.data = {
-          code: 401,
+          code: 403,
           message: 'Usted no tiene los permisos requeridos para ver esta información',
           body: []
         }
       }
       return tokenVerify;
     } catch (error) {
+      if (error instanceof TokenExpiredException) {
+        return this.data = {
+          code: 401,
+          message: error.message,
+          body: []
+        }
+      }
       if (error instanceof TokenException) {
-        this.data = {
+        return this.data = {
           code: 403,
           message: error.message,
           body: []
         }
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: "Lo sentimos, hubo un error en el servidor",
           body: []
         }
       }
-      return this.data;
     }
   }
 }

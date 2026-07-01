@@ -181,7 +181,7 @@ authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVu
 ### get movements by date
 GET http://localhost:4000/api/v1/movements/
 Content-Type: application/json
-authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3NzQ5MDk3OTAsImV4cCI6MTc3NDkyMDU5MH0.TEjWDqVtDKOZzmtVlNrZXADg7L0uEmHqhFoArhJIl6k
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3ODI4NzE2MzMsImV4cCI6MTc4Mjg3MTYzN30.up9YziIejBtAtvDzWc6YRQTLEGCl44cQ-XIZJC91mJ0
 
 {"accounting_date": "2026-03-31"}
 
@@ -242,4 +242,13 @@ authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVu
             "tags": []
         }
     ]
+}
+
+### refresh token
+POST http://localhost:4000/api/v1/users/refresh
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3ODI4NzYwNDcsImV4cCI6MTc4Mjg3NjA1MX0.FgiGSmYN3DVVnX6y3JNTxhX2vqJmwSWJBdBXekSm6Cg
+
+{
+    "email": "rbr1994@hotmail.com"
 }

@@ -23,6 +23,10 @@ export class UsersPublicRoutes {
       );
       return res.status(responseObject.code).json(responseObject);
     });
+    this.router.post("/refresh", async function(req:Request, res:Response) {
+        const responseObject = await userController.refresh(req.body.email, req.headers.authorization as string)
+        return res.status(responseObject.code).json(responseObject);
+      });
   };
 
   public getRoutes = (): Router => {

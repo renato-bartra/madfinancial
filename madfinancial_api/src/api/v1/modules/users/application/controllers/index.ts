@@ -17,6 +17,7 @@ import { GetByIdUseCase } from "../usecases/GetByIdUseCase";
 import { UserCreatorUseCase } from "../usecases/UserCreatorUseCase";
 import { UserDeleterUseCase } from "../usecases/UserDeleterUseCase";
 import { UserLoginUseCase } from "../usecases/UserLoginUseCase";
+import { UserRefreshTokenUseCase } from "../usecases/UserRefreshTokenUseCase";
 import { UserUpdaterUseCase } from "../usecases/UserUpdaterUseCase";
 
 export class UserController {
@@ -45,19 +46,18 @@ export class UserController {
         };
         users[i] = user;
       });
-      this.data = {
+      return this.data = {
         code: 200,
         message: "un gran poder conlleva una gran responsabilidad",
         body: users,
       };
     } catch (error) {
-      this.data = {
+      return this.data = {
         code: 500,
         message: `Server error: ${error}`,
         body: [],
       };
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                               Crea un usuario                              */
@@ -71,7 +71,7 @@ export class UserController {
     try {
       const userCreate: User = await userCreatorUseCase.create(user);
       // Elimina el password para no mostrarlo en la interface
-      this.data = {
+      return this.data = {
         code: 200,
         message: "El Usuario se creó correctamente",
         body: {
@@ -85,22 +85,21 @@ export class UserController {
       };
     } catch (error) {
       if (error instanceof DataValidationException) {
-        this.data = {
+        return this.data = {
           code: 400,
           message: error.message,
           body: error.getErrors(),
         };
       } else if (error instanceof UserAlreadyExistException) {
-        this.data = { code: 400, message: error.message, body: [] };
+        return this.data = { code: 400, message: error.message, body: [] };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                        Consugue un usuario por email                       */
@@ -112,7 +111,7 @@ export class UserController {
     );
     try {
       const user: User = await getByEmailUseCase.get(email);
-      this.data = {
+      return this.data = {
         code: 200,
         message: "",
         body: {
@@ -126,26 +125,25 @@ export class UserController {
       };
     } catch (error) {
       if (error instanceof DataValidationException) {
-        this.data = {
+        return this.data = {
           code: 400,
           message: error.message,
           body: error.getErrors(),
         };
       } else if (error instanceof EntityNotFoundException) {
-        this.data = {
+        return this.data = {
           code: 404,
           message: error.message,
           body: [],
         };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                         Consigue un usuario por ID                         */
@@ -154,7 +152,7 @@ export class UserController {
     const getUserByIdUseCase = new GetByIdUseCase(this.userRepository);
     try {
       const user: User = await getUserByIdUseCase.get(id);
-      this.data = {
+      return this.data = {
         code: 200,
         message: "",
         body: {
@@ -168,20 +166,19 @@ export class UserController {
       };
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
-        this.data = {
+        return this.data = {
           code: 404,
           message: error.message,
           body: [],
         };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                            Actualiza un usuario                            */
@@ -193,7 +190,7 @@ export class UserController {
     );
     try {
       const userUpdated: User = await userUpdaterUseCase.update(id, user);
-      this.data = {
+      return this.data = {
         code: 200,
         message: "El usuario se actualizó correctamente",
         body: {
@@ -207,26 +204,25 @@ export class UserController {
       };
     } catch (error) {
       if (error instanceof DataValidationException) {
-        this.data = {
+        return this.data = {
           code: 400,
           message: error.message,
           body: error.getErrors(),
         };
       } else if (error instanceof EntityNotFoundException) {
-        this.data = {
+        return this.data = {
           code: 404,
           message: error.message,
           body: [],
         };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                             Elimina un usuario                             */
@@ -235,27 +231,26 @@ export class UserController {
     const userDelterUseCase = new UserDeleterUseCase(this.userRepository);
     try {
       await userDelterUseCase.delete(id);
-      this.data = {
+      return this.data = {
         code: 200,
         message: "El usuario se eliminó correctamente",
         body: { success: true },
       };
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
-        this.data = {
+        return this.data = {
           code: 404,
           message: error.message,
           body: { success: false },
         };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
   };
   /* -------------------------------------------------------------------------- */
   /*                              Login de usuario                              */
@@ -268,7 +263,7 @@ export class UserController {
     );
     try {
       const [token, user]: [string, User] = await userLoginUseCase.login(email, password);
-      this.data = {
+      return this.data = {
         code: 200,
         message: token,
         body: {
@@ -281,25 +276,55 @@ export class UserController {
       };
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
-        this.data = {
+        return this.data = {
           code: 404,
           message: "El usuario o la contraseña son incorrectos",
           body: [],
         };
       } else if (error instanceof TokenException) {
-        this.data = {
+        return this.data = {
           code: 400,
           message: error.message,
           body: [],
         };
       } else {
-        this.data = {
+        return this.data = {
           code: 500,
           message: `Server error: ${error}`,
           body: [],
         };
       }
     }
-    return this.data;
+  };
+  /* -------------------------------------------------------------------------- */
+  /*                             Refresh user token                             */
+  /* -------------------------------------------------------------------------- */
+  refresh = async (email: string, token: string): Promise<IResponseObject> => {
+    const userRefreshTokenUseCase = new UserRefreshTokenUseCase(
+      this.userRepository,
+      this.tokenManager
+    );
+    try {
+      const newToken: string = await userRefreshTokenUseCase.refresh(email, token);
+      return this.data = {
+        code: 200,
+        message: newToken,
+        body: [],
+      };
+    } catch (error) {
+      if (error instanceof TokenException) {
+        return this.data = {
+          code: 400,
+          message: error.message,
+          body: [],
+        };
+      } else {
+        return this.data = {
+          code: 500,
+          message: `Server error: ${error}`,
+          body: [],
+        };
+      }
+    }
   };
 }

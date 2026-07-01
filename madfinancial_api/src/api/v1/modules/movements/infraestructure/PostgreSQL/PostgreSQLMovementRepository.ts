@@ -128,10 +128,7 @@ export class PostgreSQLMovementRepository implements MovementRepository {
         SELECT * FROM financial.sp_movements_delete(${movementId})
       `;
 
-      console.log(response)
-
       if (!response.length || response[0].sp_movements_delete != movementId) {
-        console.log("Esta entrando aca")
         return false;
       }
 
