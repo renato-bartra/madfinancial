@@ -32,6 +32,7 @@ HTTP API for the MadFinancial personal-finance app. Built with Node.js + TypeScr
   - [List movements by month](#get-apiv1movements)
   - [Update movement](#put-apiv1movementsmovement_id)
   - [Delete movement](#delete-apiv1movementsmovement_id)
+  - [Upload File](#post-apiv1upload_files)
 
 ---
 

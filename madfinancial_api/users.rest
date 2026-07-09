@@ -258,9 +258,6 @@ authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVu
 POST http://localhost:4000/api/v1/upload_files
 authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3ODI4NzYwNDcsImV4cCI6MTc4Mjg3NjA1MX0.FgiGSmYN3DVVnX6y3JNTxhX2vqJmwSWJBdBXekSm6Cg
 Content-Type: multipart/form-data
+--boundary
 Content-Disposition: form-data; name="file"; filename="movimientos.csv"
 Content-Type: text/csv
-
-{
-    "user_id": 2
-}
