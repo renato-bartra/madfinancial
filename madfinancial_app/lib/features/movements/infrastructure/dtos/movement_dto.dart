@@ -8,7 +8,7 @@ class MovementTypeDto {
 
   factory MovementTypeDto.fromJson(Map<String, dynamic> json) {
     return MovementTypeDto(
-      id: (json['type_id'] as num?)?.toInt() ?? 0,
+      id: (json['type_id'] as num).toInt(),
       description: json['description'] as String? ?? '',
     );
   }
@@ -27,7 +27,7 @@ class CategoryDto {
 
   factory CategoryDto.fromJson(Map<String, dynamic> json) {
     return CategoryDto(
-      id: (json['category_id'] as num?)?.toInt() ?? 0,
+      id: (json['category_id'] as num).toInt(),
       isExpenseCategory: json['category_type'] as bool? ?? true,
       description: json['description'] as String? ?? '',
     );
@@ -42,7 +42,7 @@ class AccountDto {
 
   factory AccountDto.fromJson(Map<String, dynamic> json) {
     return AccountDto(
-      id: (json['account_id'] as num?)?.toInt() ?? 0,
+      id: (json['account_id'] as num).toInt(),
       description: json['description'] as String? ?? '',
     );
   }
@@ -56,7 +56,7 @@ class TagDto {
 
   factory TagDto.fromJson(Map<String, dynamic> json) {
     return TagDto(
-      id: (json['tag_id'] as num?)?.toInt() ?? 0,
+      id: (json['tag_id'] as num).toInt(),
       description: json['description'] as String? ?? '',
     );
   }
@@ -79,13 +79,11 @@ class SubmovementDto {
 
   factory SubmovementDto.fromJson(Map<String, dynamic> json) {
     return SubmovementDto(
-      id: (json['submovement_id'] as num?)?.toInt() ?? 0,
+      id: (json['submovement_id'] as num).toInt(),
       description: json['description'] as String? ?? '',
-      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      amount: (json['amount'] as num).toDouble(),
       subcategory: CategoryDto.fromJson(_readMap(json['subcategory'])),
-      tags: _readList(
-        json['tags'],
-      ).map((item) => TagDto.fromJson(_readMap(item))).toList(),
+      tags: _readList(json['tags']).map((item) => TagDto.fromJson(_readMap(item))).toList(),
     );
   }
 }
@@ -119,11 +117,11 @@ class MovementDto {
 
   factory MovementDto.fromJson(Map<String, dynamic> json) {
     return MovementDto(
-      id: (json['movement_id'] as num?)?.toInt() ??0,
-      userId: (json['user_id'] as num?)?.toInt() ?? 0,
+      id: (json['movement_id'] as num).toInt(),
+      userId: (json['user_id'] as num).toInt(),
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      amount: (json['amount'] as num).toDouble(),
       accountingDate: _readDate(json['accounting_date']),
       type: MovementTypeDto.fromJson(_readMap(json['type'])),
       category: CategoryDto.fromJson(_readMap(json['category'])),
@@ -136,10 +134,87 @@ class MovementDto {
       ).map((item) => SubmovementDto.fromJson(_readMap(item))).toList(),
     );
   }
+
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'movement_id': 1,
+      'user_id': userId,
+      'title': title,
+      'description': description,
+      'amount': amount,
+      'accounting_date': _dateToString(accountingDate),
+      'type': type.toJson(),
+      'category': category.toJson(),
+      'account': account.toJson(),
+      'tags': tags.map((t) => t.toJson()).toList(),
+      'submovements': submovements.map((s) => s.toJson()).toList(),
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'movement_id': id,
+      'user_id': userId,
+      'title': title,
+      'description': description,
+      'amount': amount,
+      'accounting_date': _dateToString(accountingDate),
+      'type': type.toJson(),
+      'category': category.toJson(),
+      'account': account.toJson(),
+      'tags': tags.map((t) => t.toJson()).toList(),
+      'submovements': submovements.map((s) => s.toJson()).toList(),
+    };
+  }
+}
+
+extension MovementTypeDtoJson on MovementTypeDto {
+  Map<String, dynamic> toJson() => {
+    'type_id': id,
+    'description': description,
+  };
+}
+
+extension CategoryDtoJson on CategoryDto {
+  Map<String, dynamic> toJson() => {
+    'category_id': id,
+    'category_type': isExpenseCategory,
+    'description': description,
+  };
+}
+
+extension AccountDtoJson on AccountDto {
+  Map<String, dynamic> toJson() => {
+    'account_id': id,
+    'description': description,
+  };
+}
+
+extension TagDtoJson on TagDto {
+  Map<String, dynamic> toJson() => {
+    'tag_id': id,
+    'description': description,
+  };
+}
+
+extension SubmovementDtoJson on SubmovementDto {
+  Map<String, dynamic> toJson() => {
+    'submovement_id': id,
+    'description': description,
+    'amount': amount,
+    'subcategory': subcategory.toJson(),
+    'tags': tags.map((t) => t.toJson()).toList(),
+  };
+}
+
+String _dateToString(DateTime date) {
+  return '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 }
 
 Map<String, dynamic> _readMap(Object? value) {
-  if (value is Map<String, dynamic>) return value;
+  if (value is Map<String, dynamic> && value.isNotEmpty) return value;
   if (value is Map) return value.cast<String, dynamic>();
   if (value is String && value.isNotEmpty) {
     final decoded = jsonDecode(value);
@@ -149,7 +224,7 @@ Map<String, dynamic> _readMap(Object? value) {
 }
 
 List<Object?> _readList(Object? value) {
-  if (value is List) return value;
+  if (value is List && value.isNotEmpty) return value;
   if (value is String && value.isNotEmpty) {
     final decoded = jsonDecode(value);
     if (decoded is List) return decoded;

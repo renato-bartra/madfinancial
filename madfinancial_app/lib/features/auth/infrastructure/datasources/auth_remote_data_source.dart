@@ -18,7 +18,9 @@ class AuthRemoteDataSource {
       );
       final data = _readApiResponse(response.data);
       _ensureSuccess(data);
-      return UserDto.fromJson((data['body'] as Map).cast<String, dynamic>());
+      return UserDto.fromRegisterJson(
+        (data['body'] as Map).cast<String, dynamic>(),
+      );
     } on DioException catch (error) {
       throw _mapDioException(error);
     }
@@ -40,6 +42,30 @@ class AuthRemoteDataSource {
         throw const AuthException('La API no devolvió el token de sesión.');
       }
       return dto;
+    } on DioException catch (error) {
+      throw _mapDioException(error);
+    }
+  }
+
+  Future<String> refreshToken({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.usersRefresh,
+        data: {'email': email.trim()},
+        options: Options(headers: {'authorization': token}),
+      );
+      final data = _readApiResponse(response.data);
+      _ensureSuccess(data);
+      final newToken = data['message'] as String?;
+      if (newToken == null || newToken.isEmpty) {
+        throw const AuthException(
+          'La API no devolvió un nuevo token de sesión.',
+        );
+      }
+      return newToken;
     } on DioException catch (error) {
       throw _mapDioException(error);
     }

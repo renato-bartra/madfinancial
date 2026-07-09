@@ -1,3 +1,4 @@
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/auth_session.dart';
 
 class UserDto {
@@ -7,7 +8,7 @@ class UserDto {
     required this.email,
     required this.dni,
     this.lastName,
-    this.image,
+    this.image = '',
   });
 
   final int id;
@@ -17,14 +18,51 @@ class UserDto {
   final String dni;
   final String? image;
 
-  factory UserDto.fromJson(Map<String, dynamic> json) {
+  factory UserDto.fromLoginJson(Map<String, dynamic> json) {
+    final id = (json['user_id'] as num?)?.toInt();
+    if (id == null) {
+      throw const AuthException(
+        'La respuesta de login no incluye el user_id.',
+      );
+    }
+    final firstName = json['first_name'] as String?;
+    final email = json['email'] as String?;
+    final dni = json['dni'] as String?;
+    if (firstName == null || email == null || dni == null) {
+      throw const AuthException(
+        'La respuesta de login no incluye los datos del usuario.',
+      );
+    }
     return UserDto(
-      id:(json['user_id'] as num?)?.toInt() ?? 0,
-      firstName: json['first_name'] as String? ?? '',
+      id: id,
+      firstName: firstName,
       lastName: json['last_name'] as String?,
-      email: json['email'] as String? ?? '',
-      dni: json['dni'] as String? ?? '',
-      image: json['image'] as String?,
+      email: email,
+      dni: dni,
+    );
+  }
+
+  factory UserDto.fromRegisterJson(Map<String, dynamic> json) {
+    final id = (json['id'] as num?)?.toInt();
+    if (id == null) {
+      throw const AuthException(
+        'La respuesta de registro no incluye el id del usuario.',
+      );
+    }
+    final firstName = json['first_name'] as String?;
+    final email = json['email'] as String?;
+    final dni = json['dni'] as String?;
+    if (firstName == null || email == null || dni == null) {
+      throw const AuthException(
+        'La respuesta de registro no incluye los datos del usuario.',
+      );
+    }
+    return UserDto(
+      id: id,
+      firstName: firstName,
+      lastName: json['last_name'] as String?,
+      email: email,
+      dni: dni,
     );
   }
 }
@@ -36,10 +74,18 @@ class LoginResponseDto {
   final UserDto user;
 
   factory LoginResponseDto.fromApiResponse(Map<String, dynamic> json) {
-    return LoginResponseDto(
-      token: json['message'] as String? ?? '',
-      user: UserDto.fromJson((json['body'] as Map).cast<String, dynamic>()),
-    );
+    final token = json['message'] as String?;
+    if (token == null || token.isEmpty) {
+      throw const AuthException('La API no devolvió el token de sesión.');
+    }
+    final body = json['body'];
+    if (body is! Map) {
+      throw const AuthException(
+        'La respuesta de login no incluye los datos del usuario.',
+      );
+    }
+    final user = UserDto.fromLoginJson(body.cast<String, dynamic>());
+    return LoginResponseDto(token: token, user: user);
   }
 
   AuthSession toSession() {

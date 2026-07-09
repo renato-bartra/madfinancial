@@ -17,7 +17,8 @@ class DayGroupHeader extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            DateFormat('dd/MM/yyyy').format(date),
+            DateFormat("EEEE d 'de' MMMM",'es_ES').format(date),
+            // DateFormat('dd/MM/yyyy').format(date),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: AppColors.onSurfaceVariant,
               fontWeight: FontWeight.w800,

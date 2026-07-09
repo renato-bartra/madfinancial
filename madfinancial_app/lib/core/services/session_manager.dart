@@ -24,8 +24,27 @@ class SessionManager {
     return session?.token;
   }
 
+  Future<int?> getCurrentUserId() async {
+    final session = await _storage.getSession();
+    return session?.userId;
+  }
+
   Future<void> saveSession(AuthSession session) =>
       _storage.saveSession(session);
+
+  Future<void> updateToken(String newToken) async {
+    final current = await _storage.getSession();
+    if (current == null) return;
+    final updated = AuthSession(
+      userId: current.userId,
+      email: current.email,
+      token: newToken,
+      loginAt: current.loginAt,
+      firstName: current.firstName,
+      lastName: current.lastName,
+    );
+    await _storage.saveSession(updated);
+  }
 
   Future<void> clearSession() => _storage.clearSession();
 

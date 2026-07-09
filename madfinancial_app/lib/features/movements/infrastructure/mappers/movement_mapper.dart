@@ -59,3 +59,45 @@ extension MovementMapper on MovementDto {
     );
   }
 }
+
+extension MovementToDto on Movement {
+  MovementDto toDto() {
+    return MovementDto(
+      id: id,
+      userId: userId,
+      title: title,
+      description: description,
+      amount: amount,
+      accountingDate: accountingDate,
+      type: MovementTypeDto(id: type.id, description: type.description),
+      category: CategoryDto(
+        id: category.id,
+        isExpenseCategory: category.isExpenseCategory,
+        description: category.description,
+      ),
+      account: AccountDto(id: account.id, description: account.description),
+      tags: tags
+          .map((tag) => TagDto(id: tag.id, description: tag.description))
+          .toList(),
+      submovements: submovements
+          .map(
+            (sub) => SubmovementDto(
+              id: sub.id,
+              description: sub.description,
+              amount: sub.amount,
+              subcategory: CategoryDto(
+                id: sub.subcategory.id,
+                isExpenseCategory: sub.subcategory.isExpenseCategory,
+                description: sub.subcategory.description,
+              ),
+              tags: sub.tags
+                  .map(
+                    (tag) => TagDto(id: tag.id, description: tag.description),
+                  )
+                  .toList(),
+            ),
+          )
+          .toList(),
+    );
+  }
+}

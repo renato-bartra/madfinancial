@@ -12,6 +12,7 @@ class MonthSummaryHeader extends StatelessWidget {
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.usingDummyData,
+    this.carryOver = 0,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class MonthSummaryHeader extends StatelessWidget {
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
   final bool usingDummyData;
+  final double carryOver;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +109,17 @@ class MonthSummaryHeader extends StatelessWidget {
                   color: AppColors.expense,
                 ),
               ),
+              if (carryOver != 0) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SummaryTile(
+                    label: 'Transferencia',
+                    amount: carryOver,
+                    icon: Icons.swap_horiz_rounded,
+                    color: AppColors.purple,
+                  ),
+                ),
+              ],
             ],
           ),
         ],

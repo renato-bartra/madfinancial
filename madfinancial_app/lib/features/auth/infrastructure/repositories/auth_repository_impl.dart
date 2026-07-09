@@ -23,4 +23,9 @@ class AuthRepositoryImpl implements AuthRepository {
     final dto = await _remoteDataSource.login(email: email, password: password);
     return dto.toSession();
   }
+
+  @override
+  Future<String> refreshToken({required String email, required String token}) {
+    return _remoteDataSource.refreshToken(email: email, token: token);
+  }
 }

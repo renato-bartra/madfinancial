@@ -18,6 +18,7 @@ class LocalStorageService {
         fullPath,
         version: StorageConstants.databaseVersion,
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
       );
       return _database!;
     } catch (error) {
@@ -44,7 +45,93 @@ class LocalStorageService {
         value TEXT NOT NULL
       )
     ''');
+
+    await _createMovementsSchema(db);
   }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createMovementsSchema(db);
+    }
+  }
+
+  Future<void> _createMovementsSchema(Database db) async {
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.categoriesTable} (
+        id INTEGER PRIMARY KEY,
+        is_expense INTEGER NOT NULL,
+        description TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.tagsTable} (
+        id INTEGER PRIMARY KEY,
+        description TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.movementsTable} (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount REAL NOT NULL,
+        accounting_date TEXT NOT NULL,
+        type_id INTEGER NOT NULL,
+        type_description TEXT NOT NULL,
+        category_id INTEGER NOT NULL,
+        category_is_expense INTEGER NOT NULL,
+        category_description TEXT NOT NULL,
+        account_id INTEGER NOT NULL,
+        account_description TEXT NOT NULL,
+        active INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_movements_accounting_date
+      ON ${StorageConstants.movementsTable} (accounting_date)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.movementTagsTable} (
+        movement_id INTEGER NOT NULL,
+        tag_id INTEGER NOT NULL,
+        tag_description TEXT NOT NULL,
+        PRIMARY KEY (movement_id, tag_id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.submovementsTable} (
+        id INTEGER NOT NULL,
+        movement_id INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        amount REAL NOT NULL,
+        category_id INTEGER NOT NULL,
+        category_is_expense INTEGER NOT NULL,
+        category_description TEXT NOT NULL,
+        PRIMARY KEY (id, movement_id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE ${StorageConstants.submovementTagsTable} (
+        submovement_id INTEGER NOT NULL,
+        movement_id INTEGER NOT NULL,
+        tag_id INTEGER NOT NULL,
+        tag_description TEXT NOT NULL,
+        PRIMARY KEY (submovement_id, movement_id, tag_id)
+      )
+    ''');
+  }
+
+  Future<Database> get rawDb => _db;
 
   Future<void> saveSession(AuthSession session) async {
     final db = await _db;
@@ -70,10 +157,11 @@ class LocalStorageService {
 
   Future<void> setFlag(String key, String value) async {
     final db = await _db;
-    await db.insert(StorageConstants.appFlagsTable, {
-      'key': key,
-      'value': value,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      StorageConstants.appFlagsTable,
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<String?> getFlag(String key) async {
@@ -87,5 +175,14 @@ class LocalStorageService {
 
     if (result.isEmpty) return null;
     return result.first['value'] as String?;
+  }
+
+  Future<bool> getCarryOverEnabled() async {
+    final value = await getFlag(StorageConstants.carryOverEnabledKey);
+    return value == 'true';
+  }
+
+  Future<void> setCarryOverEnabled(bool value) {
+    return setFlag(StorageConstants.carryOverEnabledKey, value ? 'true' : 'false');
   }
 }

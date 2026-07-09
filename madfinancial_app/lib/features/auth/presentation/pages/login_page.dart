@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/loading_button.dart';
+import '../../../movements/application/providers/movements_providers.dart';
 import '../../application/providers/auth_providers.dart';
 import '../widgets/auth_text_field.dart';
 
@@ -46,6 +47,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!mounted) return;
     if (success) {
+      ref.invalidate(currentUserIdProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(tagsProvider);
       Navigator.of(context).pushReplacementNamed('/home');
       return;
     }
