@@ -21,7 +21,10 @@ export class PostgreSQLTagRepository implements TagRepository{
       const response: Tag[] = await this.postgresConn<Tag[]>`SELECT * FROM financial.sp_tags_get_all(${user_id})`;
       if (!response.length)
         return null
-      return response;
+      return response.map(r => ({
+          ...r,
+          tag_id: Number(r.tag_id)
+      }));
     }catch(err){
       if (err instanceof Error){
         return err.message
@@ -36,6 +39,7 @@ export class PostgreSQLTagRepository implements TagRepository{
   create = async (tag: UserTag): Promise<Tag|string> => {
     try{
       const response: Tag[] = await this.postgresConn<Tag[]>`SELECT * FROM financial.sp_tags_create(${tag.description}, ${tag.user_id})`;
+      response[0].tag_id = Number(response[0].tag_id)
       return response[0]
     }catch(err){
       if (err instanceof Error){

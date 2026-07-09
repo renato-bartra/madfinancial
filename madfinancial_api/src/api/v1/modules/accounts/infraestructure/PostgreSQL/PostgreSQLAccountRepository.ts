@@ -13,14 +13,17 @@ export class PostgreSQLAccountRepository implements AccountRepository{
     password: this.dbConfig.postgreSQLConn.password,
   });
   /* -------------------------------------------------------------------------- */
-  /*                     Cnsigue todos los categories de un usuario                   */
+  /*                   Cnsigue todos las cuentas de un usuario                  */
   /* -------------------------------------------------------------------------- */
   getAll = async (user_id: number): Promise<string | null | Account[]> => {
     try{
       const response: Account[] = await this.postgresConn<Account[]>`SELECT * FROM financial.sp_accounts_get_all(${user_id})`;
       if (!response.length)
         return null
-      return response;
+      return response.map(r => ({
+          ...r,
+          account_id: Number(r.account_id)
+      }));
     }catch(err){
       if (err instanceof Error){
         return err.message
@@ -35,6 +38,7 @@ export class PostgreSQLAccountRepository implements AccountRepository{
   create = async (account: UserAccount): Promise<Account|string> => {
     try{
       const response: Account[] = await this.postgresConn<Account[]>`SELECT * FROM financial.sp_accounts_create(${account.description}, ${account.user_id})`;
+      response[0].account_id = Number(response[0].account_id)
       return response[0]
     }catch(err){
       if (err instanceof Error){

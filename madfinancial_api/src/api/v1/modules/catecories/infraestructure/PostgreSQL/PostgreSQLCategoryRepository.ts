@@ -20,7 +20,10 @@ export class PostgreSQLCategoryRepository implements CategoryRepository{
       const response: Category[] = await this.postgresConn<Category[]>`SELECT * FROM financial.sp_categories_get_all(${user_id})`;
       if (!response.length)
         return null
-      return response;
+      return response.map(r => ({
+          ...r,
+          category_id: Number(r.category_id)
+      }));
     }catch(err){
       if (err instanceof Error){
         return err.message
@@ -35,6 +38,7 @@ export class PostgreSQLCategoryRepository implements CategoryRepository{
   create = async (category: UserCategory): Promise<Category|string> => {
     try{
       const response: Category[] = await this.postgresConn<Category[]>`SELECT * FROM financial.sp_categories_create(${category.description}, ${category.category_type}, ${category.user_id})`;
+      response[0].category_id = Number(response[0].category_id)
       return response[0]
     }catch(err){
       if (err instanceof Error){

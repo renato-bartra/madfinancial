@@ -51,6 +51,12 @@ export class PostgreSQLMovementRepository implements MovementRepository {
       if (!response.length || !response[0]) {
         throw new DataBaseException("Error al crear el movimiento");
       }
+      
+      // Cast to corect type and format the values that should be numer
+      response[0].movement_id = Number(response[0].movement_id)
+      response[0].user_id = Number(response[0].user_id)
+      response[0].amount = Number(response[0].amount)
+      // response[0].accounting_date = (response[0].accounting_date as any).toISOString().split("T")[0];
 
       return response[0] as Movement;
     } catch (err) {
@@ -74,7 +80,12 @@ export class PostgreSQLMovementRepository implements MovementRepository {
         return [];
       }
 
-      return response as Movement[];
+      return response.map(r => ({
+          ...r,
+          movement_id: Number(r.movement_id),
+          user_id: Number(r.user_id),
+          amount: Number(r.amount),
+      }));
     } catch (err) {
       if (err instanceof Error) {
         return err.message;
@@ -108,6 +119,12 @@ export class PostgreSQLMovementRepository implements MovementRepository {
       if (!response.length || !response[0]) {
         return null;
       }
+
+      // Cast to corect type and format the values that should be numer
+      response[0].movement_id = Number(response[0].movement_id)
+      response[0].user_id = Number(response[0].user_id)
+      response[0].amount = Number(response[0].amount)
+      // response[0].accounting_date = (response[0].accounting_date as any).toISOString().split("T")[0];
 
       return response[0] as Movement;
     } catch (err) {

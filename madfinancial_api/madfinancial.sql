@@ -261,7 +261,7 @@ INSERT INTO financial.t_categories(description, category_type)
 VALUES ('Comida', TRUE),
 ('Restaurante', TRUE),
 ('Supermercado', TRUE),
-('Gasolina', TRUE),
+('Vehiculo', TRUE),
 ('Taxi', TRUE),
 ('Transporte', TRUE),
 ('Alquiler', TRUE),
@@ -299,6 +299,9 @@ VALUES ('Sueldo'), ('Ahorros');
 -- =====================================================
 -- VIEWS
 -- =====================================================
+
+SELECT * FROM financial.vw_movements AS A WHERE A.user_id = 2 AND A.accounting_date > '2026-07-01';
+
 DROP VIEW IF EXISTS financial.vw_movements;
 CREATE VIEW financial.vw_movements
 AS
@@ -359,7 +362,7 @@ SELECT
     ,mv.user_id
     ,mv.title
     ,mv.description
-    ,mv.amount
+    ,mv.amount::NUMERIC(12,2)
     ,mv.accounting_date
     ,jsonb_build_object(
         'type_id', tp.type_id,
@@ -1066,7 +1069,8 @@ BEGIN
     FROM financial.vw_movements mv
     WHERE 
         mv.user_id = in_user_id
-        AND mv.accounting_date = in_accounting_date;
+        AND mv.accounting_date >= date_trunc('month', in_accounting_date)::date
+        AND mv.accounting_date < (date_trunc('month', in_accounting_date) + interval '1 month')::date;
 END;
 $$;
 
@@ -1164,5 +1168,65 @@ BEGIN
         ,in_submovements
     ) nmv;
 
+END;
+$$;
+
+
+DROP FUNCTION IF EXISTS financial.sp_import_movements;
+
+CREATE OR REPLACE FUNCTION financial.sp_import_movements(
+    in_user_id BIGINT,
+    in_movements JSONB
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO financial.t_movements AS mv (user_id, type_id, category_id, account_id, title, amount, description, accounting_date)
+    SELECT
+        in_user_id,
+        m.type_id,
+        m.category_id,
+        m.account_id,
+        m.title,
+        m.amount,
+        m.description,
+        m.accounting_date
+    FROM jsonb_to_recordset(in_movements) AS m(
+        type_id BIGINT,
+        category_id BIGINT,
+        account_id BIGINT,
+        title VARCHAR,
+        amount NUMERIC,
+        description VARCHAR,
+        accounting_date DATE
+    );
+
+    RETURN TRUE;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS financial.sp_types_get_all;
+
+CREATE OR REPLACE FUNCTION financial.sp_types_get_all(
+    in_user_id BIGINT
+)
+RETURNS TABLE (
+    type_id BIGINT,
+    description VARCHAR(100)
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        ty.type_id
+        ,ty.description
+    FROM 
+        financial.t_types as ty
+        INNER JOIN financial.t_types_users usrty ON usrty.type_id = ty.type_id
+    WHERE
+        ty.active = TRUE
+        AND usrty.user_id = in_user_id;
 END;
 $$;

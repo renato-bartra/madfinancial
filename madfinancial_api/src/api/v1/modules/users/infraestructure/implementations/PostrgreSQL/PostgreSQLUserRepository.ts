@@ -43,6 +43,7 @@ export class PostgreSQLUserRepository implements UserRepository {
         ${user.password},
         ${user.image}
       )`;
+      response[0].user_id = Number(response[0].user_id)
       return response[0]
     }catch(err){
       if (err instanceof Error){
@@ -60,6 +61,7 @@ export class PostgreSQLUserRepository implements UserRepository {
       const response: User[] = await this.postgresConn<User[]>`SELECT * FROM users.sp_users_get_by_email(${email})`;
       if (!response.length)
         return null
+      response[0].user_id = Number(response[0].user_id)
       return response[0];
     }catch(err){
       if (err instanceof Error){
@@ -76,6 +78,7 @@ export class PostgreSQLUserRepository implements UserRepository {
       const response: User[] = await this.postgresConn<User[]>`SELECT * FROM users.sp_users_get_by_id(${id})`;
       if (!response.length)
         return null
+      response[0].user_id = Number(response[0].user_id)
       return response[0];
     }catch(err){
       if (err instanceof Error){

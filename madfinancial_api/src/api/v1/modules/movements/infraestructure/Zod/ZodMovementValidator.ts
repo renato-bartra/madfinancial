@@ -1,4 +1,4 @@
-import { z, ZodError } from "zod";
+import { nullable, z, ZodError } from "zod";
 import { IErrorObject } from "../../../shared/domain/repositories/IErrorObject";
 import { ValidatorManager } from "../../../shared/domain/repositories/ValidatorManager";
 import { ZodErrorValidator } from "../../../shared/infraestructure/adapters/Zod/ZodErrorValidator";
@@ -7,7 +7,7 @@ export class ZodMovementValidator implements ValidatorManager {
   private errors: IErrorObject[] = [];
   constructor(private watcher?: boolean) {}
 
-  private readonly spanishWordsRegex = /^[a-záéíóúñäëïöü\s]+$/i;
+  private readonly spanishWordsRegex = /^[1-9a-z áéíóúñäëïöü\s]+$/i;
 
   private readonly tagSchema = z.object({
     tag_id: z.number(),
@@ -56,11 +56,12 @@ export class ZodMovementValidator implements ValidatorManager {
         error: "El título solo debe contener palabras en español",
       })
       .max(150),
-    description: z.string()
-      .regex(this.spanishWordsRegex, {
-        error: "La descripción solo debe contener palabras en español",
-      })
-      .max(500),
+    description: z.nullish(z.string()).or(
+      z.string().regex(this.spanishWordsRegex, {
+          error: "La descripción solo debe contener palabras en español",
+        })
+        .max(500)
+    ),
     amount: z.number(),
     accounting_date: z.iso.date(),
     type: this.typeSchema,
