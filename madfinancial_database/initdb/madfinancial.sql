@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict ID9oerAKZQskaHfxsGwZnGWXBsaiJqbgYtXykKrzF21gixCXoRP8m68nJXQyL3i
+\restrict 0uCu7KQeQR6KnWqFh4jdwirrC9MB6fzeop0yEuW8BpPcIQfkPIM4fqvbMoCnOpk
 
--- Dumped from database version 18.3
--- Dumped by pg_dump version 18.3
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -122,10 +122,10 @@ $$;
 
 
 --
--- Name: sp_categories_create(character varying, boolean, bigint); Type: FUNCTION; Schema: financial; Owner: -
+-- Name: sp_categories_create(character varying, boolean, character varying, bigint); Type: FUNCTION; Schema: financial; Owner: -
 --
 
-CREATE FUNCTION financial.sp_categories_create(in_description character varying, in_category_type boolean, in_user_id bigint) RETURNS TABLE(category_id bigint, category_type boolean, description character varying)
+CREATE FUNCTION financial.sp_categories_create(in_description character varying, in_category_type boolean, in_category_icon character varying, in_user_id bigint) RETURNS TABLE(category_id bigint, category_type boolean, category_icon character varying, description character varying)
     LANGUAGE plpgsql
     AS $$
 DECLARE v_category_id BIGINT;
@@ -146,8 +146,8 @@ BEGIN
         IF v_category_id IS NULL THEN
 
             -- Si no existe inserta la nueva categoría
-            INSERT INTO financial.t_categories (description, category_type)
-            VALUES (in_description, in_category_type);
+            INSERT INTO financial.t_categories (description, category_type, category_icon)
+            VALUES (in_description, in_category_type, in_category_icon);
 
             -- consigue el nuevo category_id
             SELECT cat.category_id INTO v_category_id
@@ -172,7 +172,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        cat.category_id, cat.category_type, cat.description
+        cat.category_id, cat.category_type, cat.category_icon, cat.description
     FROM 
         financial.t_categories cat
         INNER JOIN financial.t_categories_users usrc ON usrc.category_id = cat.category_id AND usrc.user_id = in_user_id
@@ -185,13 +185,13 @@ $$;
 -- Name: sp_categories_get_all(bigint); Type: FUNCTION; Schema: financial; Owner: -
 --
 
-CREATE FUNCTION financial.sp_categories_get_all(in_user_id bigint) RETURNS TABLE(category_id bigint, category_type boolean, description character varying)
+CREATE FUNCTION financial.sp_categories_get_all(in_user_id bigint) RETURNS TABLE(category_id bigint, category_type boolean, category_icon character varying, description character varying)
     LANGUAGE plpgsql
     AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        cat.category_id, cat.category_type, cat.description
+        cat.category_id, cat.category_type, cat.category_icon, cat.description
     FROM 
         financial.t_categories cat
         INNER JOIN financial.t_categories_users usrc ON usrc.category_id = cat.category_id
@@ -226,7 +226,41 @@ BEGIN
     FROM financial.vw_movements mv
     WHERE 
         mv.user_id = in_user_id
-        AND mv.accounting_date = in_accounting_date;
+        AND mv.accounting_date >= date_trunc('month', in_accounting_date)::date
+        AND mv.accounting_date < (date_trunc('month', in_accounting_date) + interval '1 month')::date;
+END;
+$$;
+
+
+--
+-- Name: sp_import_movements(bigint, jsonb); Type: FUNCTION; Schema: financial; Owner: -
+--
+
+CREATE FUNCTION financial.sp_import_movements(in_user_id bigint, in_movements jsonb) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO financial.t_movements AS mv (user_id, type_id, category_id, account_id, title, amount, description, accounting_date)
+    SELECT
+        in_user_id,
+        m.type_id,
+        m.category_id,
+        m.account_id,
+        m.title,
+        m.amount,
+        m.description,
+        m.accounting_date
+    FROM jsonb_to_recordset(in_movements) AS m(
+        type_id BIGINT,
+        category_id BIGINT,
+        account_id BIGINT,
+        title VARCHAR,
+        amount NUMERIC,
+        description VARCHAR,
+        accounting_date DATE
+    );
+
+    RETURN TRUE;
 END;
 $$;
 
@@ -476,6 +510,28 @@ $$;
 
 
 --
+-- Name: sp_types_get_all(bigint); Type: FUNCTION; Schema: financial; Owner: -
+--
+
+CREATE FUNCTION financial.sp_types_get_all(in_user_id bigint) RETURNS TABLE(type_id bigint, description character varying)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        ty.type_id
+        ,ty.description
+    FROM 
+        financial.t_types as ty
+        INNER JOIN financial.t_types_users usrty ON usrty.type_id = ty.type_id
+    WHERE
+        ty.active = TRUE
+        AND usrty.user_id = in_user_id;
+END;
+$$;
+
+
+--
 -- Name: fn_set_updated_at(); Type: FUNCTION; Schema: shared; Owner: -
 --
 
@@ -651,9 +707,9 @@ BEGIN
     FROM financial.t_categories cat
     WHERE cat.description IN ('Comida','Restaurante','Supermercado','Gasolina','Taxi','Transporte','Alquiler','Hipoteca','Electricidad','Agua','Internet',
         'Teléfono','Limpieza','Salud','Higiene','Facturas','Seguro','Educación','Ropa','Belleza','Mascotas','Entretenimiento','Viajes','Regalos','Suscripciones','Deporte',
-        'Tecnología','Hogar','Impuestos','Inversiones','Ahorro', 'Devoluciones', 'Salario', 'Depositos');
+        'Tecnología','Hogar','Impuestos','Inversiones','Ahorro', 'Devoluciones', 'Salario', 'Depositos', 'Salida por transferencia', 'Ingreso por transferencia');
 
-    -- Inserta sus tipos por defecto
+    -- Inserta sus cuentas por defecto
     INSERT INTO financial.t_accounts_users(account_id, user_id)
     SELECT acc.account_id, v_user_id
     FROM financial.t_accounts acc
@@ -747,7 +803,8 @@ CREATE TABLE financial.t_categories (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    deleted_at timestamp without time zone
+    deleted_at timestamp without time zone,
+    category_icon character varying(500)
 );
 
 
@@ -977,7 +1034,7 @@ CREATE VIEW financial.vw_movements AS
           GROUP BY st.submovement_id
         ), submovements_json AS (
          SELECT smv.movement_id,
-            jsonb_agg(jsonb_build_object('submovement_id', smv.submovement_id, 'description', smv.description, 'amount', smv.amount, 'subcategory', jsonb_build_object('category_id', scat.category_id, 'category_type', scat.category_type, 'description', scat.description), 'tags', COALESCE(st.tags, '[]'::jsonb))) AS submovements
+            jsonb_agg(jsonb_build_object('submovement_id', smv.submovement_id, 'description', smv.description, 'amount', smv.amount, 'subcategory', jsonb_build_object('category_id', scat.category_id, 'category_type', scat.category_type, 'category_icon', scat.category_icon, 'description', scat.description), 'tags', COALESCE(st.tags, '[]'::jsonb))) AS submovements
            FROM ((financial.t_submovements smv
              JOIN financial.t_categories scat ON ((scat.category_id = smv.subcategory_id)))
              LEFT JOIN submovement_tags st ON ((st.submovement_id = smv.submovement_id)))
@@ -1423,16 +1480,16 @@ ALTER TABLE ONLY financial.t_types_users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ID9oerAKZQskaHfxsGwZnGWXBsaiJqbgYtXykKrzF21gixCXoRP8m68nJXQyL3i
+\unrestrict 0uCu7KQeQR6KnWqFh4jdwirrC9MB6fzeop0yEuW8BpPcIQfkPIM4fqvbMoCnOpk
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict 0U7s9Zc33DhmpPaTxFmtdYfUd1uvXpFSX1JH8uxB0JpeIHycLAOCdxEZkcTzlEC
+\restrict pWLIj7Qoytzb7sMFDtE6qll0dZHsVTwTiyfuSkvQgg8XgAjWo2NCKi7XPURB2S5
 
--- Dumped from database version 18.3
--- Dumped by pg_dump version 18.3
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1447,79 +1504,81 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Data for Name: t_accounts; Type: TABLE DATA; Schema: financial; Owner: renato
+-- Data for Name: t_accounts; Type: TABLE DATA; Schema: financial; Owner: -
 --
 
-INSERT INTO financial.t_accounts OVERRIDING SYSTEM VALUE VALUES (1, 'Sueldo', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_accounts OVERRIDING SYSTEM VALUE VALUES (2, 'Ahorros', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-
-
---
--- Data for Name: t_categories; Type: TABLE DATA; Schema: financial; Owner: renato
---
-
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (1, 'Comida', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (2, 'Restaurante', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (3, 'Supermercado', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (4, 'Gasolina', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (5, 'Taxi', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (6, 'Transporte', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (7, 'Alquiler', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (8, 'Hipoteca', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (9, 'Electricidad', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (10, 'Agua', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (11, 'Internet', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (12, 'Teléfono', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (13, 'Limpieza', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (14, 'Salud', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (15, 'Higiene', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (16, 'Facturas', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (17, 'Seguro', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (18, 'Educación', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (19, 'Ropa', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (20, 'Belleza', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (21, 'Mascotas', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (22, 'Entretenimiento', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (23, 'Viajes', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (24, 'Regalos', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (25, 'Suscripciones', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (26, 'Deporte', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (27, 'Tecnología', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (28, 'Hogar', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (29, 'Impuestos', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (30, 'Inversiones', true, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (31, 'Ahorro', false, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:09:11.884982', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (32, 'Devoluciones', false, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:09:11.884982', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (33, 'Salario', false, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:09:11.884982', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (34, 'Depositos', false, true, '2026-03-13 17:01:33.969955', '2026-03-13 17:09:11.884982', NULL);
-INSERT INTO financial.t_categories OVERRIDING SYSTEM VALUE VALUES (35, 'Transferencia', true, true, '2026-03-17 18:49:19.183207', '2026-03-17 18:49:19.183207', NULL);
+INSERT INTO financial.t_accounts (account_id, description, active, created_at, updated_at, deleted_at) OVERRIDING SYSTEM VALUE VALUES (1, 'Sueldo', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
+INSERT INTO financial.t_accounts (account_id, description, active, created_at, updated_at, deleted_at) OVERRIDING SYSTEM VALUE VALUES (2, 'Ahorros', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
 
 
 --
--- Data for Name: t_types; Type: TABLE DATA; Schema: financial; Owner: renato
+-- Data for Name: t_categories; Type: TABLE DATA; Schema: financial; Owner: -
 --
 
-INSERT INTO financial.t_types OVERRIDING SYSTEM VALUE VALUES (1, 'Ingreso', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_types OVERRIDING SYSTEM VALUE VALUES (2, 'Gasto', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
-INSERT INTO financial.t_types OVERRIDING SYSTEM VALUE VALUES (3, 'Transferencia', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (36, 'Salida por transferencia', true, false, '2026-07-11 23:46:13.257601', '2026-07-11 23:46:13.257601', NULL, NULL);
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (37, 'Ingreso por transferencia', false, false, '2026-07-11 23:46:13.257601', '2026-07-11 23:46:13.257601', NULL, NULL);
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (1, 'Comida', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'kitchen_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (2, 'Restaurante', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'restaurant_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (3, 'Supermercado', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'shopping_cart_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (4, 'Vehículo', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'drive_eta_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (5, 'Salud', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'medical_services_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (6, 'Hogar', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'chair_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (7, 'Facturas', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'receipt_long_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (8, 'Limpieza', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'cleaning_services_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (9, 'Higiene', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'soap_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (28, 'Seguro', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'health_and_safety_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (14, 'Taxi', true, true, '2026-03-13 17:01:33.969955', '2026-07-12 00:22:33.467015', NULL, 'local_taxi_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (16, 'Transporte', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'directions_bus_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (13, 'Alquiler', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'home_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (15, 'Hipoteca', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'house_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (17, 'Electricidad', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'bolt_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (10, 'Agua', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'water_drop_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (11, 'Internet', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'wifi_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (12, 'Teléfono', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'phone_iphone_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (18, 'Educación', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'school_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (19, 'Ropa', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'checkroom_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (20, 'Belleza', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'spa_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (21, 'Mascotas', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'pets_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (22, 'Entretenimiento', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'theater_comedy_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (23, 'Viajes', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'flight_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (24, 'Regalos', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'card_giftcard_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (25, 'Suscripciones', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'subscriptions_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (26, 'Deporte', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'sports_soccer_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (27, 'Tecnología', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'devices_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (29, 'Impuestos', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'account_balance_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (30, 'Inversiones', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'trending_up_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (31, 'Ahorro', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'savings_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (32, 'Devoluciones', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'undo_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (33, 'Salario', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'payments_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (34, 'Depositos', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'account_balance_wallet_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (35, 'Transferencia', true, false, '2026-03-17 18:49:19.183207', '2026-07-12 00:53:07.905146', '2026-07-12 00:53:07.905146', NULL);
 
 
 --
--- Name: t_accounts_account_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: renato
+-- Data for Name: t_types; Type: TABLE DATA; Schema: financial; Owner: -
+--
+
+INSERT INTO financial.t_types (type_id, description, active, created_at, updated_at, deleted_at) OVERRIDING SYSTEM VALUE VALUES (1, 'Ingreso', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
+INSERT INTO financial.t_types (type_id, description, active, created_at, updated_at, deleted_at) OVERRIDING SYSTEM VALUE VALUES (2, 'Gasto', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
+INSERT INTO financial.t_types (type_id, description, active, created_at, updated_at, deleted_at) OVERRIDING SYSTEM VALUE VALUES (3, 'Transferencia', true, '2026-03-13 17:01:33.969955', '2026-03-13 17:01:33.969955', NULL);
+
+
+--
+-- Name: t_accounts_account_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: -
 --
 
 SELECT pg_catalog.setval('financial.t_accounts_account_id_seq', 4, true);
 
 
 --
--- Name: t_categories_category_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: renato
+-- Name: t_categories_category_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: -
 --
 
-SELECT pg_catalog.setval('financial.t_categories_category_id_seq', 35, true);
+SELECT pg_catalog.setval('financial.t_categories_category_id_seq', 37, true);
 
 
 --
--- Name: t_types_type_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: renato
+-- Name: t_types_type_id_seq; Type: SEQUENCE SET; Schema: financial; Owner: -
 --
 
 SELECT pg_catalog.setval('financial.t_types_type_id_seq', 3, true);
@@ -1529,5 +1588,5 @@ SELECT pg_catalog.setval('financial.t_types_type_id_seq', 3, true);
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 0U7s9Zc33DhmpPaTxFmtdYfUd1uvXpFSX1JH8uxB0JpeIHycLAOCdxEZkcTzlEC
+\unrestrict pWLIj7Qoytzb7sMFDtE6qll0dZHsVTwTiyfuSkvQgg8XgAjWo2NCKi7XPURB2S5
 
