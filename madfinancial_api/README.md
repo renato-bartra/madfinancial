@@ -208,6 +208,7 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
 | `GET` | `/api/v1/movements` | Private | List movements for a given month |
 | `PUT` | `/api/v1/movements/:movement_id` | Private | Update a movement (replaces it; the API returns a new `movement_id`) |
 | `DELETE` | `/api/v1/movements/:movement_id` | Private | Soft-delete a movement |
+| `POST` | `/api/v1/upload_files` | Private | Import movements from file |
 
 ---
 
