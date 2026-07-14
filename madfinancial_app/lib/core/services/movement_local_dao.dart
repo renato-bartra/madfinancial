@@ -98,6 +98,7 @@ class MovementLocalDao {
           'category_id': sub.subcategory.id,
           'category_is_expense': sub.subcategory.isExpenseCategory ? 1 : 0,
           'category_description': sub.subcategory.description,
+          'category_icon_name': sub.subcategory.iconName,
         });
         for (final tag in sub.tags) {
           await txn.insert(StorageConstants.submovementTagsTable, {
@@ -151,6 +152,7 @@ class MovementLocalDao {
             'category_id': sub.subcategory.id,
             'category_is_expense': sub.subcategory.isExpenseCategory ? 1 : 0,
             'category_description': sub.subcategory.description,
+            'category_icon_name': sub.subcategory.iconName,
           });
           for (final tag in sub.tags) {
             await txn.insert(StorageConstants.submovementTagsTable, {
@@ -196,11 +198,21 @@ class MovementLocalDao {
     await saveMovement(newMovement);
   }
 
+  Future<void> clearMovements() async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete(StorageConstants.movementTagsTable);
+      await txn.delete(StorageConstants.submovementTagsTable);
+      await txn.delete(StorageConstants.submovementsTable);
+      await txn.delete(StorageConstants.movementsTable);
+    });
+  }
+
   Future<List<Category>> getAllCategories() async {
     final db = await _db;
     final rows = await db.query(
       StorageConstants.categoriesTable,
-      orderBy: 'is_expense ASC, description ASC',
+      orderBy: 'is_expense ASC, id ASC',
     );
     return rows
         .map(
@@ -208,6 +220,7 @@ class MovementLocalDao {
             id: row['id'] as int,
             isExpenseCategory: (row['is_expense'] as int) == 1,
             description: row['description'] as String,
+            iconName: row['icon_name'] as String?,
           ),
         )
         .toList();
@@ -222,6 +235,7 @@ class MovementLocalDao {
           'id': cat.id,
           'is_expense': cat.isExpenseCategory ? 1 : 0,
           'description': cat.description,
+          'icon_name': cat.iconName,
         });
       }
     });
@@ -327,6 +341,7 @@ class MovementLocalDao {
             id: row['category_id'] as int,
             isExpenseCategory: (row['category_is_expense'] as int) == 1,
             description: row['category_description'] as String,
+            iconName: row['category_icon_name'] as String?,
           ),
           tags: tags,
         ),
@@ -351,6 +366,7 @@ class MovementLocalDao {
       'category_id': movement.category.id,
       'category_is_expense': movement.category.isExpenseCategory ? 1 : 0,
       'category_description': movement.category.description,
+      'category_icon_name': movement.category.iconName,
       'account_id': movement.account.id,
       'account_description': movement.account.description,
     };
@@ -376,6 +392,7 @@ class MovementLocalDao {
         id: row['category_id'] as int,
         isExpenseCategory: (row['category_is_expense'] as int) == 1,
         description: row['category_description'] as String,
+        iconName: row['category_icon_name'] as String?,
       ),
       account: Account(
         id: row['account_id'] as int,

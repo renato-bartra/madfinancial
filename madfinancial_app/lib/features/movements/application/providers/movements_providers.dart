@@ -4,12 +4,15 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/services/movement_local_dao.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../domain/repositories/category_repository.dart';
+import '../../domain/repositories/file_import_repository.dart';
 import '../../domain/repositories/movement_repository.dart';
 import '../../domain/repositories/tag_repository.dart';
 import '../../infrastructure/datasources/category_remote_data_source.dart';
+import '../../infrastructure/datasources/file_import_remote_data_source.dart';
 import '../../infrastructure/datasources/movement_remote_data_source.dart';
 import '../../infrastructure/datasources/tag_remote_data_source.dart';
 import '../../infrastructure/repositories/category_repository_impl.dart';
+import '../../infrastructure/repositories/file_import_repository_impl.dart';
 import '../../infrastructure/repositories/movement_repository_impl.dart';
 import '../../infrastructure/repositories/tag_repository_impl.dart';
 import '../controllers/movements_controller.dart';
@@ -18,6 +21,7 @@ import '../usecases/delete_movement_usecase.dart';
 import '../usecases/get_categories_usecase.dart';
 import '../usecases/get_movements_by_date_usecase.dart';
 import '../usecases/get_tags_usecase.dart';
+import '../usecases/import_movements_from_file_usecase.dart';
 import '../usecases/update_movement_usecase.dart';
 
 final currentUserIdProvider = FutureProvider<int?>((ref) async {
@@ -48,6 +52,11 @@ final tagRemoteDataSourceProvider = Provider<TagRemoteDataSource>((ref) {
   return TagRemoteDataSource(ref.watch(dioProvider));
 });
 
+final fileImportRemoteDataSourceProvider =
+    Provider<FileImportRemoteDataSource>((ref) {
+  return FileImportRemoteDataSource(ref.watch(dioProvider));
+});
+
 final movementRepositoryProvider = Provider<MovementRepository>((ref) {
   return MovementRepositoryImpl(
     ref.watch(movementRemoteDataSourceProvider),
@@ -66,6 +75,19 @@ final tagRepositoryProvider = Provider<TagRepository>((ref) {
   return TagRepositoryImpl(
     ref.watch(tagRemoteDataSourceProvider),
     ref.watch(movementLocalDaoProvider),
+  );
+});
+
+final fileImportRepositoryProvider = Provider<FileImportRepository>((ref) {
+  return FileImportRepositoryImpl(
+    ref.watch(fileImportRemoteDataSourceProvider),
+  );
+});
+
+final importMovementsFromFileUseCaseProvider =
+    Provider<ImportMovementsFromFileUseCase>((ref) {
+  return ImportMovementsFromFileUseCase(
+    ref.watch(fileImportRepositoryProvider),
   );
 });
 

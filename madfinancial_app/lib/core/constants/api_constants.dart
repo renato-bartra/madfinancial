@@ -17,4 +17,5 @@ class ApiConstants {
   static const String categories = '/categories/';
   static const String tags = '/tags/';
   static const String accounts = '/accounts/';
+  static const String uploadFiles = '/upload_files';
 }

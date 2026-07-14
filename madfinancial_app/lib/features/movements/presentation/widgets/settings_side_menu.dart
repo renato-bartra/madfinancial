@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../pages/import_file_page.dart';
 
 class SettingsSideMenu extends ConsumerWidget {
   const SettingsSideMenu({super.key});
@@ -99,6 +100,45 @@ class SettingsSideMenu extends ConsumerWidget {
                         horizontal: 20,
                         vertical: 4,
                       ),
+                    ),
+                    const Divider(
+                      color: AppColors.divider,
+                      height: 1,
+                      indent: 20,
+                      endIndent: 20,
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.upload_file_rounded,
+                        color: AppColors.primary,
+                      ),
+                      title: const Text(
+                        'Importar desde archivo',
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Sube un archivo CSV para importar movimientos',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ImportFilePage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -16,6 +16,7 @@ extension CategoryMapper on CategoryDto {
       id: id,
       isExpenseCategory: isExpenseCategory,
       description: description,
+      iconName: iconName,
     );
   }
 }
@@ -74,6 +75,7 @@ extension MovementToDto on Movement {
         id: category.id,
         isExpenseCategory: category.isExpenseCategory,
         description: category.description,
+        iconName: category.iconName,
       ),
       account: AccountDto(id: account.id, description: account.description),
       tags: tags
@@ -89,6 +91,7 @@ extension MovementToDto on Movement {
                 id: sub.subcategory.id,
                 isExpenseCategory: sub.subcategory.isExpenseCategory,
                 description: sub.subcategory.description,
+                iconName: sub.subcategory.iconName,
               ),
               tags: sub.tags
                   .map(

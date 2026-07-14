@@ -53,6 +53,28 @@ class LocalStorageService {
     if (oldVersion < 2) {
       await _createMovementsSchema(db);
     }
+    if (oldVersion < 3) {
+      await _migrateToV3(db);
+    }
+  }
+
+  Future<void> _migrateToV3(Database db) async {
+    await db.execute(
+      'ALTER TABLE ${StorageConstants.categoriesTable} ADD COLUMN icon_name TEXT',
+    );
+    await db.execute(
+      'ALTER TABLE ${StorageConstants.movementsTable} '
+      'ADD COLUMN category_icon_name TEXT',
+    );
+    await db.execute(
+      'ALTER TABLE ${StorageConstants.submovementsTable} '
+      'ADD COLUMN category_icon_name TEXT',
+    );
+    await db.delete(StorageConstants.movementTagsTable);
+    await db.delete(StorageConstants.submovementTagsTable);
+    await db.delete(StorageConstants.submovementsTable);
+    await db.delete(StorageConstants.movementsTable);
+    await db.delete(StorageConstants.categoriesTable);
   }
 
   Future<void> _createMovementsSchema(Database db) async {
@@ -60,7 +82,8 @@ class LocalStorageService {
       CREATE TABLE ${StorageConstants.categoriesTable} (
         id INTEGER PRIMARY KEY,
         is_expense INTEGER NOT NULL,
-        description TEXT NOT NULL
+        description TEXT NOT NULL,
+        icon_name TEXT
       )
     ''');
 
@@ -84,6 +107,7 @@ class LocalStorageService {
         category_id INTEGER NOT NULL,
         category_is_expense INTEGER NOT NULL,
         category_description TEXT NOT NULL,
+        category_icon_name TEXT,
         account_id INTEGER NOT NULL,
         account_description TEXT NOT NULL,
         active INTEGER,
@@ -116,6 +140,7 @@ class LocalStorageService {
         category_id INTEGER NOT NULL,
         category_is_expense INTEGER NOT NULL,
         category_description TEXT NOT NULL,
+        category_icon_name TEXT,
         PRIMARY KEY (id, movement_id)
       )
     ''');
