@@ -705,9 +705,10 @@ BEGIN
     INSERT INTO financial.t_categories_users(category_id, user_id)
     SELECT cat.category_id, v_user_id
     FROM financial.t_categories cat
-    WHERE cat.description IN ('Comida','Restaurante','Supermercado','Gasolina','Taxi','Transporte','Alquiler','Hipoteca','Electricidad','Agua','Internet',
-        'Teléfono','Limpieza','Salud','Higiene','Facturas','Seguro','Educación','Ropa','Belleza','Mascotas','Entretenimiento','Viajes','Regalos','Suscripciones','Deporte',
-        'Tecnología','Hogar','Impuestos','Inversiones','Ahorro', 'Devoluciones', 'Salario', 'Depositos', 'Salida por transferencia', 'Ingreso por transferencia');
+    WHERE cat.description IN ('Comida','Restaurante','Supermercado','Vehículo','Salud','Hogar','Facturas','Limpieza','Higiene','Seguro','Taxi',
+        'Transporte','Alquiler','Hipoteca','Electricidad','Agua','Internet','Teléfono','Educación','Ropa','Belleza','Mascotas','Entretenimiento',
+        'Viajes','Regalos','Suscripciones','Deporte','Tecnología','Impuestos','Inversiones','Ahorro','Devoluciones','Salario','Depositos',
+        'Salida por transferencia','Ingreso por transferencia');
 
     -- Inserta sus cuentas por defecto
     INSERT INTO financial.t_accounts_users(account_id, user_id)
@@ -800,11 +801,11 @@ CREATE TABLE financial.t_categories (
     category_id bigint NOT NULL,
     description character varying(100) NOT NULL,
     category_type boolean DEFAULT true NOT NULL,
+    category_icon character varying(500)
     active boolean DEFAULT true NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    deleted_at timestamp without time zone,
-    category_icon character varying(500)
+    deleted_at timestamp without time zone
 );
 
 
