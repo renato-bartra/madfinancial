@@ -1240,18 +1240,24 @@ $$;
 
 
 -- En con consola en la ruta de backups
+
 -- sudo -u postgres pg_dump \
---   -d madfinancial \
---   --schema=user \
---   --schema=financial \
---   --schema-only \
---   >01_schema_v2.sql
+-- -d madfinancial \
+-- --schema=users \
+-- --schema=financial \
+-- --schema=shared \
+-- --schema-only \
+-- --no-owner \
+-- --no-privileges \
+-- > 01_schema_v2.sql
 
 -- sudo -u postgres pg_dump \
 --   -d madfinancial \
---   --data-only \    
+--   --data-only \
 --   --table=financial.t_types \
 --   --table=financial.t_categories \
 --   --table=financial.t_accounts \
---   --column-inserts \      
+--   --column-inserts \
+--   --no-owner \
+--   --no-privileges \
 --   >02_seed_data_v2.sql
