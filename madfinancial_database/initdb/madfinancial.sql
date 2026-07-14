@@ -801,7 +801,7 @@ CREATE TABLE financial.t_categories (
     category_id bigint NOT NULL,
     description character varying(100) NOT NULL,
     category_type boolean DEFAULT true NOT NULL,
-    category_icon character varying(500)
+    category_icon character varying(500),
     active boolean DEFAULT true NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
