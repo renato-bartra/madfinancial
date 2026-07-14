@@ -52,6 +52,7 @@ CREATE TABLE financial.t_categories (
     category_id BIGINT GENERATED ALWAYS AS IDENTITY,
     description VARCHAR(100) NOT NULL,
     category_type BOOLEAN NOT NULL DEFAULT TRUE,
+    category_icon VARCHAR(500) NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -257,41 +258,45 @@ EXECUTE FUNCTION shared.fn_set_updated_at();
 INSERT INTO financial.t_types(description)
 VALUES ('Ingreso'),('Gasto'),('Transferencia');
 
-INSERT INTO financial.t_categories(description, category_type)
-VALUES ('Comida', TRUE),
-('Restaurante', TRUE),
-('Supermercado', TRUE),
-('Vehiculo', TRUE),
-('Taxi', TRUE),
-('Transporte', TRUE),
-('Alquiler', TRUE),
-('Hipoteca', TRUE),
-('Electricidad', TRUE),
-('Agua', TRUE),
-('Internet', TRUE),
-('Teléfono', TRUE),
-('Limpieza', TRUE),
-('Salud', TRUE),
-('Higiene', TRUE),
-('Facturas', TRUE),
-('Seguro', TRUE),
-('Educación', TRUE),
-('Ropa', TRUE),
-('Belleza', TRUE),
-('Mascotas', TRUE),
-('Entretenimiento', TRUE),
-('Viajes', TRUE),
-('Regalos', TRUE),
-('Suscripciones', TRUE),
-('Deporte', TRUE),
-('Tecnología', TRUE),
-('Hogar', TRUE),
-('Impuestos', TRUE),
-('Inversiones', TRUE),
-('Ahorro', FALSE),
-('Devoluciones', FALSE),
-('Salario', FALSE),
-('Depositos', FALSE);
+INSERT INTO financial.t_categories(description, category_type, category_icon, active)
+VALUES
+('Comida', TRUE, 'kitchen_rounded', TRUE),
+('Restaurante', TRUE, 'restaurant_rounded', TRUE),
+('Supermercado', TRUE, 'shopping_cart_rounded', TRUE),
+('Vehículo', TRUE, 'drive_eta_rounded', TRUE),
+('Taxi', TRUE, 'local_taxi_rounded', TRUE),
+('Transporte', TRUE, 'directions_bus_rounded', TRUE),
+('Alquiler', TRUE, 'home_rounded', TRUE),
+('Hipoteca', TRUE, 'house_rounded', TRUE),
+('Electricidad', TRUE, 'bolt_rounded', TRUE),
+('Agua', TRUE, 'water_drop_rounded', TRUE),
+('Internet', TRUE, 'wifi_rounded', TRUE),
+('Teléfono', TRUE, 'phone_iphone_rounded', TRUE),
+('Limpieza', TRUE, 'cleaning_services_rounded', TRUE),
+('Salud', TRUE, 'medical_services_rounded', TRUE),
+('Higiene', TRUE, 'soap_rounded', TRUE),
+('Facturas', TRUE, 'receipt_long_rounded', TRUE),
+('Seguro', TRUE, 'health_and_safety_rounded', TRUE),
+('Educación', TRUE, 'school_rounded', TRUE),
+('Ropa', TRUE, 'checkroom_rounded', TRUE),
+('Belleza', TRUE, 'spa_rounded', TRUE),
+('Mascotas', TRUE, 'pets_rounded', TRUE),
+('Entretenimiento', TRUE, 'theater_comedy_rounded', TRUE),
+('Viajes', TRUE, 'flight_rounded', TRUE),
+('Regalos', TRUE, 'card_giftcard_rounded', TRUE),
+('Suscripciones', TRUE, 'subscriptions_rounded', TRUE),
+('Deporte', TRUE, 'sports_soccer_rounded', TRUE),
+('Tecnología', TRUE, 'devices_rounded', TRUE),
+('Hogar', TRUE, 'chair_rounded', TRUE),
+('Impuestos', TRUE, 'account_balance_rounded', TRUE),
+('Inversiones', TRUE, 'trending_up_rounded', TRUE),
+('Ahorro', FALSE, 'savings_rounded', TRUE),
+('Devoluciones', FALSE, 'undo_rounded', TRUE),
+('Salario', FALSE, 'payments_rounded', TRUE),
+('Depositos', FALSE, 'account_balance_wallet_rounded', TRUE)
+('Salida por transferencia', TRUE, '', FALSE),
+('Ingreso por transferencia', FALSE, '', FALSE);
+
 
 INSERT INTO financial.t_accounts(description)
 VALUES ('Sueldo'), ('Ahorros');
@@ -299,8 +304,6 @@ VALUES ('Sueldo'), ('Ahorros');
 -- =====================================================
 -- VIEWS
 -- =====================================================
-
-SELECT * FROM financial.vw_movements AS A WHERE A.user_id = 2 AND A.accounting_date > '2026-07-01';
 
 DROP VIEW IF EXISTS financial.vw_movements;
 CREATE VIEW financial.vw_movements
@@ -345,6 +348,7 @@ submovements_json AS (
                 jsonb_build_object(
                     'category_id', scat.category_id,
                     'category_type', scat.category_type,
+                    'category_icon', scat.category_icon,
                     'description', scat.description
                 ),
                 'tags', COALESCE(st.tags, '[]'::jsonb)
@@ -445,7 +449,7 @@ BEGIN
     FROM financial.t_categories cat
     WHERE cat.description IN ('Comida','Restaurante','Supermercado','Gasolina','Taxi','Transporte','Alquiler','Hipoteca','Electricidad','Agua','Internet',
         'Teléfono','Limpieza','Salud','Higiene','Facturas','Seguro','Educación','Ropa','Belleza','Mascotas','Entretenimiento','Viajes','Regalos','Suscripciones','Deporte',
-        'Tecnología','Hogar','Impuestos','Inversiones','Ahorro', 'Devoluciones', 'Salario', 'Depositos');
+        'Tecnología','Hogar','Impuestos','Inversiones','Ahorro', 'Devoluciones', 'Salario', 'Depositos', 'Salida por transferencia', 'Ingreso por transferencia');
 
     -- Inserta sus cuentas por defecto
     INSERT INTO financial.t_accounts_users(account_id, user_id)
@@ -750,6 +754,7 @@ CREATE OR REPLACE FUNCTION financial.sp_categories_get_all(
 RETURNS TABLE (
     category_id BIGINT,
     category_type BOOLEAN,
+    category_icon VARCHAR(500),
     description VARCHAR(100)
 )
 LANGUAGE plpgsql
@@ -757,7 +762,7 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        cat.category_id, cat.category_type, cat.description
+        cat.category_id, cat.category_type, cat.category_icon, cat.description
     FROM 
         financial.t_categories cat
         INNER JOIN financial.t_categories_users usrc ON usrc.category_id = cat.category_id
@@ -772,11 +777,13 @@ DROP FUNCTION IF EXISTS financial.sp_categories_create;
 CREATE OR REPLACE FUNCTION financial.sp_categories_create(
     in_description VARCHAR(100),
     in_category_type BOOLEAN,
+    in_category_icon VARCHAR(500),
     in_user_id BIGINT
 )
 RETURNS TABLE (
     category_id BIGINT,
     category_type BOOLEAN,
+    category_icon VARCHAR(500),
     description VARCHAR(100)
 )
 LANGUAGE plpgsql
@@ -799,8 +806,8 @@ BEGIN
         IF v_category_id IS NULL THEN
 
             -- Si no existe inserta la nueva categoría
-            INSERT INTO financial.t_categories (description, category_type)
-            VALUES (in_description, in_category_type);
+            INSERT INTO financial.t_categories (description, category_type, category_icon)
+            VALUES (in_description, in_category_type, in_category_icon);
 
             -- consigue el nuevo category_id
             SELECT cat.category_id INTO v_category_id
@@ -825,7 +832,7 @@ BEGIN
 
     RETURN QUERY
     SELECT
-        cat.category_id, cat.category_type, cat.description
+        cat.category_id, cat.category_type, cat.category_icon, cat.description
     FROM 
         financial.t_categories cat
         INNER JOIN financial.t_categories_users usrc ON usrc.category_id = cat.category_id AND usrc.user_id = in_user_id
@@ -1230,3 +1237,21 @@ BEGIN
         AND usrty.user_id = in_user_id;
 END;
 $$;
+
+
+-- En con consola en la ruta de backups
+-- sudo -u postgres pg_dump \
+--   -d madfinancial \
+--   --schema=user \
+--   --schema=financial \
+--   --schema-only \
+--   >01_schema_v2.sql
+
+-- sudo -u postgres pg_dump \
+--   -d madfinancial \
+--   --data-only \    
+--   --table=financial.t_types \
+--   --table=financial.t_categories \
+--   --table=financial.t_accounts \
+--   --column-inserts \      
+--   >02_seed_data_v2.sql

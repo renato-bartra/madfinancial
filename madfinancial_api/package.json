@@ -25,7 +25,7 @@
     "@types/node": "17.0.13",
     "@types/nodemailer": "7.0.2",
     "@types/request-ip": "0.0.41",
-    "cross-env": "^10.1.0",
+    "cross-env": "10.1.0",
     "eslint": "9.38.0",
     "nodemon": "3.1.10",
     "ts-node": "10.9.2",
@@ -35,7 +35,7 @@
   "dependencies": {
     "bcryptjs": "2.4.3",
     "cors": "2.8.5",
-    "csv-parse": "^7.0.1",
+    "csv-parse": "7.0.1",
     "dotenv-flow": "4.1.0",
     "express": "4.17.2",
     "helmet": "8.1.0",

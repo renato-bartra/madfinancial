@@ -10,12 +10,18 @@ export class ZodCategoryValidator implements ValidatorManager {
 
   validate = async (userCategory: object): Promise<object | null> => {
     // Inicializa las validaciones regex
-    const regex_description: RegExp = new RegExp(/^[a-zA-Z áéíóúñäëïöüÁÉÍÓÚÑ\s]*$/, 'i');
+    const regex_description: RegExp = new RegExp(/^[a-zA-Z áéíóúñäëïöüÁÉÍÓÚÑ\s_/]*$/, 'i');
     // inicializa el exquema de zod
     const userSchema: z.ZodSchema<UserCategory> = z.strictObject({
       user_id: z.number(),
       category_id: z.number(),
       category_type: z.boolean(),
+      category_icon: z.nullable(z.string()).or(
+        z.string().regex(regex_description, {
+          error: "El icono de la categoría solo debe contener palabras en español",
+        })
+        .max(500)
+      ),
       description: z.string().regex(regex_description, {error:"El nombre solo debe contener letras"}).max(100)
     });
     // valida

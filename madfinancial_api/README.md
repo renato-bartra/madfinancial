@@ -73,7 +73,7 @@ When the token is missing, expired, or invalid, the middleware returns a `401` (
 | `400` | Validation error. `body` is `[]` for business validation, or a list of field errors for data validation. |
 | `401` | Token expired. need to refresh token |
 | `403` | Insufficient role, or invalid token. |
-| `404` | Entity not found, or generic not-found (e.g. login with wrong credentials). `body` is `[]`. |
+| `404` | Entity not found, or generic not-found (e.g. login with wrong credentials).|
 | `500` | Server error. `body` is `[]`. |
 
 ## Shared data types
@@ -110,6 +110,7 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
 {
   "category_id": 3,
   "category_type": true,
+  "category_icon": "shopping_cart_rounded",
   "description": "Supermercado"
 }
 ```
@@ -144,6 +145,7 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
   "subcategory": {
     "category_id": 13,
     "category_type": true,
+    "category_icon": "cleaning_services_rounded",
     "description": "Limpieza"
   },
   "tags": [
@@ -163,7 +165,7 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
   "amount": 100.00,
   "accounting_date": "2026-03-31",
   "type": { "type_id": 2, "description": "Gasto" },
-  "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+  "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
   "account": { "account_id": 1, "description": "Efectivo" },
   "tags": [],
   "submovements": [
@@ -171,7 +173,7 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
       "submovement_id": 1,
       "description": "Shampoo Carimi",
       "amount": 40.00,
-      "subcategory": { "category_id": 13, "category_type": true, "description": "Limpieza" },
+      "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
   ]
@@ -713,6 +715,7 @@ List categories for the user. Despite using `GET`, this endpoint reads the user 
     {
       "category_id": 3,
       "category_type": true,
+      "category_icon": "shopping_cart_rounded",
       "description": "Supermercado"
     }
   ]
@@ -741,6 +744,7 @@ Create a category.
   "user_id": 2,
   "category_id": 0,
   "category_type": true,
+  "category_icon": "directions_bus_rounded",
   "description": "Transporte"
 }
 ```
@@ -756,6 +760,7 @@ Create a category.
   "body": {
     "category_id": 6,
     "category_type": true,
+    "category_icon": "directions_bus_rounded",
     "description": "Transporte"
   }
 }
@@ -858,7 +863,7 @@ Create a movement (income or expense). The user id is taken from the JWT `sub` c
   "amount": 100.00,
   "accounting_date": "2026-03-31",
   "type": { "type_id": 2, "description": "Gasto" },
-  "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+  "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
   "account": { "account_id": 1, "description": "Efectivo" },
   "tags": [],
   "submovements": [
@@ -866,7 +871,7 @@ Create a movement (income or expense). The user id is taken from the JWT `sub` c
       "submovement_id": 0,
       "description": "Shampoo Carimi",
       "amount": 40.00,
-      "subcategory": { "category_id": 13, "category_type": true, "description": "Limpieza" },
+      "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
   ]
@@ -889,7 +894,7 @@ Use `type_id: 1` for income, `type_id: 2` for expense. The submovements' `amount
     "amount": 100.00,
     "accounting_date": "2026-03-31",
     "type": { "type_id": 2, "description": "Gasto" },
-    "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+    "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
     "account": { "account_id": 1, "description": "Efectivo" },
     "tags": [],
     "submovements": [
@@ -897,7 +902,7 @@ Use `type_id: 1` for income, `type_id: 2` for expense. The submovements' `amount
         "submovement_id": 1,
         "description": "Shampoo Carimi",
         "amount": 40.00,
-        "subcategory": { "category_id": 13, "category_type": true, "description": "Limpieza" },
+        "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
         "tags": [{ "tag_id": 2, "description": "Carimi" }]
       }
     ]
@@ -942,7 +947,7 @@ List movements for the month that contains the given `accounting_date`. The user
       "amount": 100.00,
       "accounting_date": "2026-03-15",
       "type": { "type_id": 2, "description": "Gasto" },
-      "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+      "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
       "account": { "account_id": 1, "description": "Efectivo" },
       "tags": [],
       "submovements": []
@@ -984,7 +989,7 @@ The full movement payload, same shape as `POST /api/v1/movements`:
   "amount": 120.00,
   "accounting_date": "2026-03-31",
   "type": { "type_id": 2, "description": "Gasto" },
-  "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+  "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
   "account": { "account_id": 1, "description": "Efectivo" },
   "tags": [],
   "submovements": [
@@ -992,7 +997,7 @@ The full movement payload, same shape as `POST /api/v1/movements`:
       "submovement_id": 0,
       "description": "Shampoo Carimi",
       "amount": 40.00,
-      "subcategory": { "category_id": 13, "category_type": true, "description": "Limpieza" },
+      "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
   ]
@@ -1013,7 +1018,7 @@ The full movement payload, same shape as `POST /api/v1/movements`:
     "amount": 120.00,
     "accounting_date": "2026-03-31",
     "type": { "type_id": 2, "description": "Gasto" },
-    "category": { "category_id": 3, "category_type": true, "description": "Supermercado" },
+    "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
     "account": { "account_id": 1, "description": "Efectivo" },
     "tags": [],
     "submovements": [
@@ -1021,7 +1026,7 @@ The full movement payload, same shape as `POST /api/v1/movements`:
         "submovement_id": 1,
         "description": "Shampoo Carimi",
         "amount": 40.00,
-        "subcategory": { "category_id": 13, "category_type": true, "description": "Limpieza" },
+        "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
         "tags": [{ "tag_id": 2, "description": "Carimi" }]
       }
     ]

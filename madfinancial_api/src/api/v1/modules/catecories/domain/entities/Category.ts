@@ -3,6 +3,7 @@ import { Entity } from "../../../shared/domain/entities/Entity";
 export interface Category extends Entity{
   category_id: number,
   category_type: boolean,
+  category_icon: string | null,
   description: string
 }
 

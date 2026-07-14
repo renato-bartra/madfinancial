@@ -37,7 +37,12 @@ export class PostgreSQLCategoryRepository implements CategoryRepository{
   /* -------------------------------------------------------------------------- */
   create = async (category: UserCategory): Promise<Category|string> => {
     try{
-      const response: Category[] = await this.postgresConn<Category[]>`SELECT * FROM financial.sp_categories_create(${category.description}, ${category.category_type}, ${category.user_id})`;
+      const response: Category[] = await this.postgresConn<Category[]>`SELECT * FROM financial.sp_categories_create(
+        ${category.description}, 
+        ${category.category_type},
+        ${category.category_icon},
+        ${category.user_id}
+      )`;
       response[0].category_id = Number(response[0].category_id)
       return response[0]
     }catch(err){
