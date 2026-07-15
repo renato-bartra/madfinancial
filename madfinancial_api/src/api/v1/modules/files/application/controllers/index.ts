@@ -22,7 +22,6 @@ export class FileController {
       const importMovements: ImportMovement[] = parse(file, {
         columns: true,
         delimiter: ",",
-        trim: true,
         skip_empty_lines: true,
       });
       const fileImporter = new ImportFileUseCase(this.fileRepository, this.categoryRepository, this.accountRepository);
@@ -34,6 +33,7 @@ export class FileController {
         body: []
       };
     } catch (error) {
+      console.log("llega aca");
       if (error instanceof DataValidationException) {
         // aqui formatea los errores de fileSaver.getErrors()
         return this.data = {

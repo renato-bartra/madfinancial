@@ -98,7 +98,7 @@ export class ImportFileUseCase {
       category_id: dbCategoryMap.get(item.Categoria)!.category_id,
       account_id: dbAccountMap.get(item.Cuenta)!.account_id,
       title: item.Titulo,
-      amount: item.Monto,
+      amount: Number(String(item.Monto).replace(/,/g, "")),
       description: item.Descripcion,
       accounting_date: item.Fecha
     }));

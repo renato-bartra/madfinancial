@@ -707,7 +707,7 @@ BEGIN
     FROM financial.t_categories cat
     WHERE cat.description IN ('Comida','Restaurante','Supermercado','Vehículo','Salud','Hogar','Facturas','Limpieza','Higiene','Seguro','Taxi',
         'Transporte','Alquiler','Hipoteca','Electricidad','Agua','Internet','Teléfono','Educación','Ropa','Belleza','Mascotas','Entretenimiento',
-        'Viajes','Regalos','Suscripciones','Deporte','Tecnología','Impuestos','Inversiones','Ahorro','Devoluciones','Salario','Depositos',
+        'Viajes','Regalos','Suscripciones','Deporte','Tecnología','Impuestos','Inversiones','Ahorros','Devoluciones','Salario','Depósitos',
         'Salida por transferencia','Ingreso por transferencia');
 
     -- Inserta sus cuentas por defecto
@@ -1548,12 +1548,11 @@ INSERT INTO financial.t_categories (category_id, description, category_type, act
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (27, 'Tecnología', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'devices_rounded');
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (29, 'Impuestos', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'account_balance_rounded');
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (30, 'Inversiones', true, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'trending_up_rounded');
-INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (31, 'Ahorro', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'savings_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (31, 'Ahorros', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'savings_rounded');
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (32, 'Devoluciones', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'undo_rounded');
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (33, 'Salario', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'payments_rounded');
-INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (34, 'Depositos', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'account_balance_wallet_rounded');
+INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (34, 'Depósitos', false, true, '2026-03-13 17:01:33.969955', '2026-07-11 23:59:07.10963', NULL, 'account_balance_wallet_rounded');
 INSERT INTO financial.t_categories (category_id, description, category_type, active, created_at, updated_at, deleted_at, category_icon) OVERRIDING SYSTEM VALUE VALUES (35, 'Transferencia', true, false, '2026-03-17 18:49:19.183207', '2026-07-12 00:53:07.905146', '2026-07-12 00:53:07.905146', NULL);
-
 
 --
 -- Data for Name: t_types; Type: TABLE DATA; Schema: financial; Owner: -
