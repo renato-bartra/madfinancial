@@ -33,7 +33,6 @@ export class FileController {
         body: []
       };
     } catch (error) {
-      console.log("llega aca");
       if (error instanceof DataValidationException) {
         // aqui formatea los errores de fileSaver.getErrors()
         return this.data = {
