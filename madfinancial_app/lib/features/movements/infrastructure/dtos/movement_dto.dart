@@ -19,20 +19,20 @@ class CategoryDto {
     required this.id,
     required this.isExpenseCategory,
     required this.description,
-    this.iconName,
+    required this.iconName,
   });
 
   final int id;
   final bool isExpenseCategory;
   final String description;
-  final String? iconName;
+  final String iconName;
 
   factory CategoryDto.fromJson(Map<String, dynamic> json) {
     return CategoryDto(
       id: (json['category_id'] as num).toInt(),
       isExpenseCategory: json['category_type'] as bool? ?? true,
       description: json['description'] as String? ?? '',
-      iconName: json['category_icon'] as String?,
+      iconName: json['category_icon'] as String? ?? '',
     );
   }
 }

@@ -375,6 +375,7 @@ SELECT
     ,jsonb_build_object(
         'category_id', cat.category_id,
         'category_type', cat.category_type,
+        'category_icon', cat.category_icon,
         'description', cat.description
     ) AS category
     ,jsonb_build_object(

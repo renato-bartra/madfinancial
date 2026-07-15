@@ -220,7 +220,7 @@ class MovementLocalDao {
             id: row['id'] as int,
             isExpenseCategory: (row['is_expense'] as int) == 1,
             description: row['description'] as String,
-            iconName: row['icon_name'] as String?,
+            iconName: row['icon_name'] as String,
           ),
         )
         .toList();
@@ -341,7 +341,7 @@ class MovementLocalDao {
             id: row['category_id'] as int,
             isExpenseCategory: (row['category_is_expense'] as int) == 1,
             description: row['category_description'] as String,
-            iconName: row['category_icon_name'] as String?,
+            iconName: row['category_icon_name'] as String,
           ),
           tags: tags,
         ),
@@ -392,7 +392,7 @@ class MovementLocalDao {
         id: row['category_id'] as int,
         isExpenseCategory: (row['category_is_expense'] as int) == 1,
         description: row['category_description'] as String,
-        iconName: row['category_icon_name'] as String?,
+        iconName: row['category_icon_name'] as String,
       ),
       account: Account(
         id: row['account_id'] as int,

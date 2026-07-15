@@ -136,7 +136,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
               const Text(
                 "Transferencia",
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+                style: TextStyle(color: AppColors.background),
               ),
               const SizedBox(width: 30),
               FloatingActionButton(
@@ -151,7 +151,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
               const Text(
                 "Ingreso",
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+                style: TextStyle(color: AppColors.background),
               ),
               const SizedBox(width: 30),
               FloatingActionButton(
@@ -166,7 +166,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
               const Text(
                 "Salida",
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+                style: TextStyle(color: AppColors.background),
               ),
               const SizedBox(width: 30),
               FloatingActionButton(

@@ -2,7 +2,7 @@ class StorageConstants {
   const StorageConstants._();
 
   static const String databaseName = 'madfinancial_app.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static const String authSessionsTable = 'auth_sessions';
   static const String appFlagsTable = 'app_flags';
