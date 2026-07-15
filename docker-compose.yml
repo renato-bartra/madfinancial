@@ -7,9 +7,9 @@ services:
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: renato7172
-      POSTGRES_DB: madfinancial
+      POSTGRES_USER: ${PDB_USER}
+      POSTGRES_PASSWORD: ${PDB_PASSWORD}
+      POSTGRES_DB: ${PDB_DATABASE}
 
     ports:
       - "5433:5432"
