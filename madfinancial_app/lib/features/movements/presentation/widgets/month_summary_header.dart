@@ -73,14 +73,14 @@ class MonthSummaryHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             'Balance del mes',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           MoneyText(
             amount: balance,
             showSign: false,
@@ -89,7 +89,7 @@ class MonthSummaryHeader extends StatelessWidget {
               letterSpacing: -1.5,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -109,19 +109,56 @@ class MonthSummaryHeader extends StatelessWidget {
                   color: AppColors.expense,
                 ),
               ),
-              if (carryOver != 0) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _SummaryTile(
-                    label: 'Transferencia',
-                    amount: carryOver,
-                    icon: Icons.swap_horiz_rounded,
-                    color: AppColors.purple,
-                  ),
-                ),
-              ],
             ],
           ),
+          const SizedBox(height: 10),
+          if (carryOver != 0) Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Expanded(child: 
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.swap_horiz_rounded, color: AppColors.purple, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Transferencia',
+                            style: const TextStyle(color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 50),
+                      MoneyText(
+                        amount: carryOver,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                )
+              )
+              
+
+
+              // Expanded(
+              //   child: _SummaryTile(
+              //     label: 'Transferencia',
+              //     amount: carryOver,
+              //     icon: Icons.swap_horiz_rounded,
+              //     color: AppColors.purple,
+              //   ),
+              // ),
+            ]
+          )
         ],
       ),
     );

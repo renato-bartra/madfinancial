@@ -44,7 +44,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!_consumedInitialRefresh &&
           ref.read(tokenRefreshNotifierProvider) > 0) {
         _consumedInitialRefresh = true;
-        _showRefreshSnackBar();
       }
     });
   }
@@ -93,7 +92,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     ref.listen<int>(tokenRefreshNotifierProvider, (prev, next) {
       if (prev != null && next > prev) {
-        _showRefreshSnackBar();
+        _consumedInitialRefresh = true;
       }
     });
 

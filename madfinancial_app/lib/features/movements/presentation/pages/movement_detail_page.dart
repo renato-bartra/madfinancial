@@ -33,11 +33,6 @@ class MovementDetailPage extends ConsumerWidget {
           icon: const Icon(Icons.close_rounded),
         ),
         actions: [
-          // IconButton(
-          //   tooltip: 'Cancelar',
-          //   onPressed: () => Navigator.of(context).pop(false),
-          //   icon: const Icon(Icons.close_rounded),
-          // ),
           Padding(
             padding: const EdgeInsets.only(right: 14),
             child: _TrashButton(

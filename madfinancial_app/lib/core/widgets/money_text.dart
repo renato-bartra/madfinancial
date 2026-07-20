@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -25,12 +26,14 @@ class MoneyText extends StatelessWidget {
     final sign = amount > 0 && showSign ? '+' : '';
     final color = amount >= 0 ? AppColors.income : AppColors.expense;
 
-    return Text(
+    return AutoSizeText(
       '$sign${formatter.format(amount)}',
+      maxLines: 1,
+      minFontSize: 8,
       style: (style ?? Theme.of(context).textTheme.bodyLarge)?.copyWith(
         color: color,
         fontWeight: FontWeight.w700,
-      ),
+      )
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -88,12 +90,13 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
   }
 
   double get _subSum => _subDrafts.fold(0, (s, d) => s + d.amount);
+  double get _subNeeded => widget.draftAmount - _subDrafts.fold(0, (s, d) => s + d.amount);
 
   bool get _canSave {
     if (widget.draftAmount == 0) return false;
     if (_titleController.text.trim().isEmpty) return false;
     if (_category == null) return false;
-    if (_subDrafts.isNotEmpty && _subSum != widget.draftAmount) return false;
+    if (_subDrafts.isNotEmpty && double.parse(_subSum.toStringAsFixed(2)) != widget.draftAmount) return false;
     return true;
   }
 
@@ -260,19 +263,15 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
         : (widget.draftAmount == widget.draftAmount.truncateToDouble()
             ? widget.draftAmount.toInt().toString()
             : widget.draftAmount.toStringAsFixed(2));
-    final showSuggestions = _titleFocus.hasFocus &&
-        _category != null &&
+    final showSuggestions = _category != null &&
         _titleController.text.trim().isNotEmpty;
     final suggestionsAsync = showSuggestions
         ? ref.watch(titleSuggestionsProvider(_category!.id))
         : null;
+    final titlesSuggestions = suggestionsAsync?.value ?? <String>[];
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -281,23 +280,24 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    amountText,
-                    style: TextStyle(
-                      color: amountColor,
-                      fontSize: 80,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -2,
-                    ),
+                AutoSizeText(
+                  amountText,
+                  maxLines: 1,
+                  minFontSize: 12,
+                  style: TextStyle(
+                    color: amountColor,
+                    fontSize: 80,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -2,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
+                  child: AutoSizeText(
                     'PEN',
+                    maxLines: 1,
+                    minFontSize: 12,
                     style: TextStyle(
                       color: amountColor.withValues(alpha: 0.7),
                       fontSize: 22,
@@ -313,29 +313,57 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
               onTap: _pickCategory,
             ),
             const SizedBox(height: 18),
-            TextField(
+            TypeAheadField<String>(
               controller: _titleController,
-              focusNode: _titleFocus,
-              style: const TextStyle(
-                color: AppColors.onSurface,
-                fontSize: 18,
-              ),
-              decoration: const InputDecoration(
-                hintText: 'Titulo',
-                hintStyle: TextStyle(
-                  color: AppColors.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onChanged: (_) => setState(() {}),
+              suggestionsCallback: (search) {
+                return titlesSuggestions
+                    .where(
+                      (title) => title.toLowerCase().contains(
+                        search.toLowerCase(),
+                      ),
+                    )
+                    .toList();
+              },
+              emptyBuilder: (context) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'No se encontraron resultados',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                );
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  title: Text(suggestion),
+                );
+              },
+              onSelected: (titlesSuggestions) {
+                _titleController.text = titlesSuggestions;
+              },
+              builder: (context, controller, focusNode) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 18,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Titulo',
+                    hintStyle: TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  onTapOutside: (pointerDownEvent) => FocusScope.of(context).unfocus(),
+                );
+              }
             ),
-            if (showSuggestions)
-              _TitleSuggestions(
-                async: suggestionsAsync!,
-                exclude: _titleController.text.trim(),
-                onSelect: _selectSuggestion,
-              ),
             const SizedBox(height: 14),
             TextField(
               controller: _descriptionController,
@@ -387,7 +415,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
                 child: Text(
                   _subSum == widget.draftAmount
                       ? 'Subtotal: S/ ${_subSum.toStringAsFixed(2)} ✓'
-                      : 'Subtotal: S/ ${_subSum.toStringAsFixed(2)} / S/ ${widget.draftAmount.toStringAsFixed(2)}',
+                      : 'Monto faltante: S/ ${_subNeeded.toStringAsFixed(2)} de S/ ${widget.draftAmount.toStringAsFixed(2)}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: _subSum == widget.draftAmount
@@ -903,72 +931,4 @@ class _SubDraft {
   double amount;
   String description;
   List<Tag> tags;
-}
-
-class _TitleSuggestions extends StatelessWidget {
-  const _TitleSuggestions({
-    required this.async,
-    required this.exclude,
-    required this.onSelect,
-  });
-
-  final AsyncValue<List<String>> async;
-  final String exclude;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: LinearProgressIndicator(minHeight: 1),
-      ),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (titles) {
-        final filtered = titles
-            .where((t) => t.toLowerCase() != exclude.toLowerCase())
-            .take(3)
-            .toList();
-        if (filtered.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: filtered
-                .map(
-                  (title) => InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => onSelect(title),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.onSurfaceVariant
-                              .withValues(alpha: 0.25),
-                          width: 1.1,
-                        ),
-                      ),
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          color: AppColors.onSurface,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        );
-      },
-    );
-  }
 }
