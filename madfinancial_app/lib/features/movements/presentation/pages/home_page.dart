@@ -25,9 +25,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const String _refreshSnackBar =
-      'Renovamos tu sesión automáticamente para que no interrumpas tu trabajo. '
-      'Sigue usando la aplicación con normalidad.';
 
   bool _consumedInitialRefresh = false;
 
@@ -48,12 +45,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  void _showRefreshSnackBar() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(_refreshSnackBar)),
-    );
-  }
 
   Future<void> _openCreateFlow({required bool isIncome}) async {
     final amount = await CalculatorSheet.show(context, isIncome: isIncome);

@@ -81,14 +81,6 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
     if (mounted) setState(() {});
   }
 
-  void _selectSuggestion(String title) {
-    _titleController.text = title;
-    _titleController.selection = TextSelection.fromPosition(
-      TextPosition(offset: title.length),
-    );
-    _titleFocus.requestFocus();
-  }
-
   double get _subSum => _subDrafts.fold(0, (s, d) => s + d.amount);
   double get _subNeeded => widget.draftAmount - _subDrafts.fold(0, (s, d) => s + d.amount);
 
