@@ -20,12 +20,15 @@ export class UpdateMovementUseCase {
       throw new DataValidationException(this.validatorManager.getErrors());
     }
 
+    const roundedAmount: number = Math.round(movement.amount * 100) / 100
+
     if (movement.submovements && movement.submovements.length > 0) {
       const submovementSum = movement.submovements.reduce(
         (sum, submovement) => sum + submovement.amount,
         0
       );
-      if (submovementSum !== movement.amount) {
+      const roundedSubamount = Math.round(submovementSum * 100) / 100
+      if (roundedSubamount !== roundedAmount) {
         throw new BusinessValidationException(
           `La suma de los submovimientos (${submovementSum}) debe ser igual al monto del movimiento (${movement.amount})`
         );
