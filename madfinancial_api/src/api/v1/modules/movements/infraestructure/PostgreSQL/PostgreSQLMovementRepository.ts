@@ -1,4 +1,4 @@
-import { Movement } from "../../domain/entities/Movement";
+import { Movement, TransferMovement } from "../../domain/entities/Movement";
 import { MovementRepository } from "../../domain/repositories/MovementRepository";
 import { DBConfig } from "../../../../config/DBConfig";
 import postgres, { JSONValue } from "postgres";
@@ -157,4 +157,111 @@ export class PostgreSQLMovementRepository implements MovementRepository {
       return "Hubo un error inesperado al eliminar el movimiento";
     }
   };
+
+  createTransfer = async (movement: TransferMovement): Promise<Movement[]> => {
+    try {
+      const response = await this.postgresConn<Movement[]>`
+        SELECT * FROM financial.sp_transfer_movement_create(
+          ${movement.user_id},
+          ${movement.account_in.account_id},
+          ${movement.account_out.account_id},
+          ${movement.title},
+          ${movement.amount},
+          ${movement.description},
+          ${movement.accounting_date},
+          ${this.postgresConn.json(movement.tags as JSONValue)} :: JSONB
+        )
+      `;
+
+      if (!response.length || !response[0]) {
+        throw new DataBaseException("Error al crear los movimientos de salida e ingreso por transferencia");
+      }
+      
+      // Cast to corect type and format the values that should be numer
+      response[0].movement_id = Number(response[0].movement_id)
+      response[1].movement_id = Number(response[1].movement_id)
+      response[0].user_id = Number(response[0].user_id)
+      response[1].user_id = Number(response[1].user_id)
+      response[0].amount = Number(response[0].amount)
+      response[1].amount = Number(response[1].amount)
+      // response[0].accounting_date = (response[0].accounting_date as any).toISOString().split("T")[0];
+
+      return response as Movement[];
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new DataBaseException(err.message);
+      }
+      throw new Error("Hubo un error inesperado");
+    }
+  };
+
+  updateTransfer = async (movement: TransferMovement): Promise<Movement[]> => {
+    try {
+      const response = await this.postgresConn<Movement[]>`
+        SELECT * FROM financial.sp_transfer_movement_update(
+          ${movement.user_id},
+          ${movement.transfer_uuid},
+          ${movement.account_in.account_id},
+          ${movement.account_out.account_id},
+          ${movement.title},
+          ${movement.amount},
+          ${movement.description},
+          ${movement.accounting_date},
+          ${this.postgresConn.json(movement.tags as JSONValue)} :: JSONB
+        )
+      `;
+
+      if (!response.length || !response[0]) {
+        throw new DataBaseException("Error al actualizar los movimientos de salida e ingreso por transferencia");
+      }
+      
+      // Cast to corect type and format the values that should be numer
+      response[0].movement_id = Number(response[0].movement_id)
+      response[1].movement_id = Number(response[1].movement_id)
+      response[0].user_id = Number(response[0].user_id)
+      response[1].user_id = Number(response[1].user_id)
+      response[0].amount = Number(response[0].amount)
+      response[1].amount = Number(response[1].amount)
+      // response[0].accounting_date = (response[0].accounting_date as any).toISOString().split("T")[0];
+
+      return response as Movement[];
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new DataBaseException(err.message);
+      }
+      throw new Error("Hubo un error inesperado");
+    }
+  };
+
+  existsTransfer = async (transfer_uuid: string): Promise<boolean> => {
+    try {
+      const response = await this.postgresConn<{ movement_id: number }[]>`
+        SELECT movement_id
+        FROM financial.t_movements
+        WHERE transfer_uuid = ${transfer_uuid}
+        AND active = TRUE;
+      `;
+      return response.length > 0;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new DataBaseException(err.message);
+      }
+      throw new Error("Hubo un error inesperado al validar la existencia de la transferencia");
+    }
+  };
+
+  deleteTransfer = async (transfer_uuid: string): Promise<boolean> => {
+    try {
+      await this.postgresConn<{ sp_movements_delete: number }[]>`
+        SELECT * FROM financial.sp_transfer_movement_delete(${transfer_uuid})
+      `;
+
+      return true;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new DataBaseException(err.message);
+      }
+      throw new Error("Hubo un error inesperado al eliminar el movimiento");
+    }
+  }
 }

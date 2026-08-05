@@ -254,10 +254,67 @@ authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVu
 }
 
 
-### Uppoad token
+### Upload file
 POST http://localhost:4000/api/v1/upload_files
 authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwic29uIjoiUmVuYXRvIEJhcnRyYSBSZWF0ZWd1aSIsImVtYSI6InJicjE5OTRAaG90bWFpbC5jb20iLCJ0b3UiOlsidXNlciJdLCJpYXQiOjE3ODI4NzYwNDcsImV4cCI6MTc4Mjg3NjA1MX0.FgiGSmYN3DVVnX6y3JNTxhX2vqJmwSWJBdBXekSm6Cg
 Content-Type: multipart/form-data
 --boundary
 Content-Disposition: form-data; name="file"; filename="movimientos.csv"
 Content-Type: text/csv
+
+### Create Transfer
+POST http://localhost:4000/api/v1/movements/transfers/
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInNvbiI6IlJlbmF0byBCYXJ0cmEgUmVhdGVndWkiLCJlbWEiOiJyYnIxOTk0QGhvdG1haWwuY29tIiwidG91IjpbInVzZXIiXSwiaWF0IjoxNzg1OTAyNTk4LCJleHAiOjE3ODU5ODg5OTh9.fcJtPx8Ykvul6r6Uro0UpxxM5km7YoZec5AjtmqTfKI
+
+{
+    "movement_id":1,
+    "user_id": 2,
+    "title":"Transferencia a ahorros",
+    "description": "Cuenta ahorros BBVA",
+    "amount":1000,
+    "accounting_date": "2026-08-04",
+    "type":{},
+    "category":{},
+    "account_out":{
+        "account_id":1,
+        "description":"Sueldo"
+    },
+    "account_in":{
+        "account_id":2,
+        "description":"Ahorros"
+    },
+    "tags":[],
+    "submovements": []
+}
+
+### Create Transfer
+PUT http://localhost:4000/api/v1/movements/transfers/019fd046-b9ee-7133-ae9a-dae1b4b61246
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInNvbiI6IlJlbmF0byBCYXJ0cmEgUmVhdGVndWkiLCJlbWEiOiJyYnIxOTk0QGhvdG1haWwuY29tIiwidG91IjpbInVzZXIiXSwiaWF0IjoxNzg1OTAyNTk4LCJleHAiOjE3ODU5ODg5OTh9.fcJtPx8Ykvul6r6Uro0UpxxM5km7YoZec5AjtmqTfKI
+
+{
+    "movement_id":1,
+    "user_id": 2,
+    "title":"Transferencia a ahorros",
+    "description": "Cuenta ahorros BBVA",
+    "amount":1000,
+    "accounting_date": "2026-08-04",
+    "type":{},
+    "category":{},
+    "account_out":{
+        "account_id":1,
+        "description":"Sueldo"
+    },
+    "account_in":{
+        "account_id":2,
+        "description":"Ahorros"
+    },
+    "tags":[],
+    "submovements": []
+}
+
+### Delete transfer
+DELETE http://localhost:4000/api/v1/movements/transfers/019fd046-b9ee-7133-ae9a-dae1b4b61246
+Content-Type: application/json
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInNvbiI6IlJlbmF0byBCYXJ0cmEgUmVhdGVndWkiLCJlbWEiOiJyYnIxOTk0QGhvdG1haWwuY29tIiwidG91IjpbInVzZXIiXSwiaWF0IjoxNzg1OTAyNTk4LCJleHAiOjE3ODU5ODg5OTh9.fcJtPx8Ykvul6r6Uro0UpxxM5km7YoZec5AjtmqTfKI

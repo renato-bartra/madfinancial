@@ -33,6 +33,9 @@ HTTP API for the MadFinancial personal-finance app. Built with Node.js + TypeScr
   - [Update movement](#put-apiv1movementsmovement_id)
   - [Delete movement](#delete-apiv1movementsmovement_id)
   - [Upload File](#post-apiv1upload_files)
+  - [Create transfer](#post-apiv1movementstransfers)
+  - [Upload File](#put-apiv1movementstransferstransfer_uuid)
+  - [Upload File](#delete-apiv1movementstransferstransfer_uuid)
 
 ---
 
@@ -176,7 +179,8 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
       "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
-  ]
+  ],
+  "transfer_uuid": ""
 }
 ```
 
@@ -209,6 +213,9 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
 | `PUT` | `/api/v1/movements/:movement_id` | Private | Update a movement (replaces it; the API returns a new `movement_id`) |
 | `DELETE` | `/api/v1/movements/:movement_id` | Private | Soft-delete a movement |
 | `POST` | `/api/v1/upload_files` | Private | Import movements from file |
+| `POST` | `POST /api/v1/movements/transfers/` | Private | Create a transfer (two movements, income and expense whit the same transfer_uuid) |
+| `PUT` | `POST /api/v1/movements/transfers/:transfer_uuid` | Private | Update a transfer (replaces it; the API returns two movements with a new `movement_id`) |
+| `DELETE` | `/api/v1/movements/transfers/:transfer_uuid` | Private | Soft-delete a transfer (delete income and expense movement) |
 
 ---
 
@@ -850,6 +857,7 @@ Create an account.
 ### `POST /api/v1/movements`
 
 Create a movement (income or expense). The user id is taken from the JWT `sub` claim, not from the request body — any `user_id` in the body is overwritten by the server.
+`transfer_uuid` is always empty.
 
 **Auth**: required.
 
@@ -875,7 +883,8 @@ Create a movement (income or expense). The user id is taken from the JWT `sub` c
       "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
-  ]
+  ],
+  "transfer_uuid": ""
 }
 ```
 
@@ -906,7 +915,8 @@ Use `type_id: 1` for income, `type_id: 2` for expense. The submovements' `amount
         "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
         "tags": [{ "tag_id": 2, "description": "Carimi" }]
       }
-    ]
+    ],
+    "transfer_uuid": ""
   }
 }
 ```
@@ -922,6 +932,7 @@ Use `type_id: 1` for income, `type_id: 2` for expense. The submovements' `amount
 ### `GET /api/v1/movements`
 
 List movements for the month that contains the given `accounting_date`. The user id is taken from the JWT `sub` claim.
+`transfer_uuid` will display a UUID if the movement is related to a transfer.
 
 **Auth**: required.
 
@@ -951,7 +962,8 @@ List movements for the month that contains the given `accounting_date`. The user
       "category": { "category_id": 3, "category_type": true, "category_icon": "shopping_cart_rounded", "description": "Supermercado" },
       "account": { "account_id": 1, "description": "Efectivo" },
       "tags": [],
-      "submovements": []
+      "submovements": [],
+      "transfer_uuid": ""
     }
   ]
 }
@@ -968,6 +980,7 @@ List movements for the month that contains the given `accounting_date`. The user
 ### `PUT /api/v1/movements/:movement_id`
 
 Update a movement. The API soft-deletes the existing movement by `:movement_id`, then inserts a new one with the payload's data and returns the new movement. The returned `movement_id` is **always different** from the path parameter.
+`transfer_uuid` is always empty.
 
 **Auth**: required.
 
@@ -1001,7 +1014,8 @@ The full movement payload, same shape as `POST /api/v1/movements`:
       "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
       "tags": [{ "tag_id": 2, "description": "Carimi" }]
     }
-  ]
+  ],
+  "transfer_uuid": ""
 }
 ```
 
@@ -1030,7 +1044,8 @@ The full movement payload, same shape as `POST /api/v1/movements`:
         "subcategory": { "category_id": 13, "category_type": true, "category_icon": "cleaning_services_rounded", "description": "Limpieza" },
         "tags": [{ "tag_id": 2, "description": "Carimi" }]
       }
-    ]
+    ],
+    "transfer_uuid": ""
   }
 }
 ```
@@ -1172,3 +1187,254 @@ Unexpected server error.
   "body": []
 }
 ```
+
+---
+
+### `POST /api/v1/movements/transfers/`
+
+Creates a transfer between two accounts by generating two movements: Expense for `account_out` and Income for `account_in`
+The attribute `user_id` is taken from the JWT `sub` claim. Any `user_id` sent in the request body is ignored.
+The following fields are ignored by the server:
+- `type`: Automatically set to `type_id: 3` (`Transferencia`).
+- `submovements`: Ignored.
+Categories are also assigned automatically:
+| Movement | Category |
+|----------|----------|
+| Expense | `category_id: 36` (`Salida por transferencia`) |
+| Income | `category_id: 37` (`Ingreso por transferencia`) |
+Both movements share the same `transfer_uuid`, `title`, `description` and —if present— `tags`.
+`tags` are supported, but every tag must already exist in the database.
+
+**Auth**: required.
+
+**Request body**
+
+```json
+{
+    "movement_id":1,
+    "user_id": 2,
+    "title":"Transferencia a ahorros",
+    "description": "Cuenta ahorros BBVA",
+    "amount":1000,
+    "accounting_date": "2026-08-04",
+    "type":{},
+    "category":{},
+    "account_out":{
+        "account_id":1,
+        "description":"Sueldo"
+    },
+    "account_in":{
+        "account_id":2,
+        "description":"Ahorros"
+    },
+    "tags":[],
+    "submovements": []
+}
+```
+
+**Response (200)**
+
+```json
+{
+  "code": 200,
+  "message": "Transferencia creada correctamente",
+  "body": [
+    {
+      "movement_id": 1432,
+      "user_id": 2,
+      "title": "Transferencia a ahorros",
+      "description": "Cuenta ahorros BBVA",
+      "amount": 1000,
+      "accounting_date": "2026-08-04T00:00:00.000Z",
+      "type": {
+        "type_id": 3,
+        "description": "Transferencia"
+      },
+      "category": {
+        "category_id": 36,
+        "description": "Salida por transferencia",
+        "category_icon": null,
+        "category_type": true
+      },
+      "account": {
+        "account_id": 1,
+        "description": "Sueldo"
+      },
+      "tags": [],
+      "submovements": [],
+      "transfer_uuid": "019fd01b-38b1-75ad-86ad-890229b104b8"
+    },
+    {
+      "movement_id": 1433,
+      "user_id": 2,
+      "title": "Transferencia a ahorros",
+      "description": "Cuenta ahorros BBVA",
+      "amount": 1000,
+      "accounting_date": "2026-08-04T00:00:00.000Z",
+      "type": {
+        "type_id": 3,
+        "description": "Transferencia"
+      },
+      "category": {
+        "category_id": 37,
+        "description": "Ingreso por transferencia",
+        "category_icon": null,
+        "category_type": false
+      },
+      "account": {
+        "account_id": 2,
+        "description": "Ahorros"
+      },
+      "tags": [],
+      "submovements": [],
+      "transfer_uuid": "019fd01b-38b1-75ad-86ad-890229b104b8"
+    }
+  ]
+}
+```
+
+**Error responses**
+
+- `400` — data validation failure. `body` is a list of field errors.
+- `500` — server error.
+
+---
+
+### `PUT /api/v1/movements/transfers/:transfer_uuid`
+
+Update a movement. The API soft-deletes the existing movement by `:transfer_uuid`, then inserts two new ones with the payload's data and returns the two new movements. The returned `transfer_uuid` is **always the same** from the path parameter.
+
+**Auth**: required.
+
+**Path parameters**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `transfer_uuid` | string | The uuid of the transfer |
+
+**Request body**
+
+The full movement payload, same shape as `POST /api/v1/movements/transfers`:
+
+```json
+{
+    "movement_id":1,
+    "user_id": 2,
+    "title":"Transferencia a ahorros",
+    "description": "Cuenta ahorros BBVA",
+    "amount":1000,
+    "accounting_date": "2026-08-04",
+    "type":{},
+    "category":{},
+    "account_out":{
+        "account_id":1,
+        "description":"Sueldo"
+    },
+    "account_in":{
+        "account_id":2,
+        "description":"Ahorros"
+    },
+    "tags":[],
+    "submovements": []
+}
+```
+
+**Response (200)**
+
+```json
+{
+  "code": 200,
+  "message": "Transferencia creada correctamente",
+  "body": [
+    {
+      "movement_id": 1436,
+      "user_id": 2,
+      "title": "Transferencia a ahorros",
+      "description": "Cuenta ahorros BBVA",
+      "amount": 1000,
+      "accounting_date": "2026-08-04T00:00:00.000Z",
+      "type": {
+        "type_id": 3,
+        "description": "Transferencia"
+      },
+      "category": {
+        "category_id": 36,
+        "description": "Salida por transferencia",
+        "category_icon": null,
+        "category_type": true
+      },
+      "account": {
+        "account_id": 1,
+        "description": "Sueldo"
+      },
+      "tags": [],
+      "submovements": [],
+      "transfer_uuid": "019fd046-b9ee-7133-ae9a-dae1b4b61246"
+    },
+    {
+      "movement_id": 1437,
+      "user_id": 2,
+      "title": "Transferencia a ahorros",
+      "description": "Cuenta ahorros BBVA",
+      "amount": 1000,
+      "accounting_date": "2026-08-04T00:00:00.000Z",
+      "type": {
+        "type_id": 3,
+        "description": "Transferencia"
+      },
+      "category": {
+        "category_id": 37,
+        "description": "Ingreso por transferencia",
+        "category_icon": null,
+        "category_type": false
+      },
+      "account": {
+        "account_id": 2,
+        "description": "Ahorros"
+      },
+      "tags": [],
+      "submovements": [],
+      "transfer_uuid": "019fd046-b9ee-7133-ae9a-dae1b4b61246"
+    }
+  ]
+}
+```
+
+**Error responses**
+
+- `400` — data validation failure. `body` is a list of field errors.
+- `404` — the `:transfer_uuid` does not exist. `body: []`.
+- `500` — server error.
+
+---
+
+### `DELETE /api/v1/movements/transfers/:transfer_uuid`
+
+Soft-delete a movement (sets `active = false` and `deleted_at = now`).
+
+**Auth**: required.
+
+**Path parameters**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `transfer_uuid` | string | The uuid of the tranfer to delete |
+
+**Request body**: none.
+
+**Response (200)**
+
+```json
+{
+  "code": 200,
+  "message": "Transferencia eliminada",
+  "body": []
+}
+```
+
+**Error responses**
+
+- `404` — the `:movement_id` does not exist. `body: []`.
+- `500` — server error.
+
+---

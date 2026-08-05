@@ -28,4 +28,10 @@ export interface Movement extends Entity {
   account: Account;
   tags: Tag[] | [];
   submovements: Submovement[] | [];
+  transfer_uuid: string;
+}
+
+export type TransferMovement = Omit<Movement, 'account'> & {
+  account_in: Account;
+  account_out: Account;
 }

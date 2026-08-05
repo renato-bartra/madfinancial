@@ -53,6 +53,34 @@ export class MovementPrivateRoutes {
       );
       return res.status(responseObject.code).json(responseObject);
     });
+
+    this.router.post("/transfers/", async (req: Request, res: Response) => {
+      const token = String(req.headers.authorization).replace("Bearer ", "");
+      const tokenObject = this.jwtManager.verify(token);
+      const responseObject: IResponseObject = await this.movementController.createTransfer(
+        req.body,
+        Number(tokenObject.sub)
+      );
+      return res.status(responseObject.code).json(responseObject);
+    });
+
+    this.router.put("/transfers/:transfer_uuid", async (req: Request, res: Response) => {
+      const token = String(req.headers.authorization).replace("Bearer ", "");
+      const tokenObject = this.jwtManager.verify(token);
+      const responseObject: IResponseObject = await this.movementController.updateTransfer(
+        req.body,
+        req.params.transfer_uuid,
+        Number(tokenObject.sub)
+      );
+      return res.status(responseObject.code).json(responseObject);
+    });
+
+    this.router.delete("/transfers/:transfer_uuid", async (req: Request, res: Response) => {
+      const responseObject: IResponseObject = await this.movementController.deleteTransfer(
+        req.params.transfer_uuid
+      );
+      return res.status(responseObject.code).json(responseObject);
+    });
   };
 
   public getRoutes = (): Router => {
