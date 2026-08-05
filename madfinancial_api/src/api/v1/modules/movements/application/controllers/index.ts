@@ -220,7 +220,7 @@ export class MovementController {
       
       return this.data = {
         code: 200,
-        message: "Transferencia creada correctamente",
+        message: "Transferencia actualizada correctamente",
         body: transferCreated
       } 
     } catch (error) {

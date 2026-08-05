@@ -34,8 +34,8 @@ HTTP API for the MadFinancial personal-finance app. Built with Node.js + TypeScr
   - [Delete movement](#delete-apiv1movementsmovement_id)
   - [Upload File](#post-apiv1upload_files)
   - [Create transfer](#post-apiv1movementstransfers)
-  - [Upload File](#put-apiv1movementstransferstransfer_uuid)
-  - [Upload File](#delete-apiv1movementstransferstransfer_uuid)
+  - [Update transfer](#put-apiv1movementstransferstransfer_uuid)
+  - [Delete transfer](#delete-apiv1movementstransferstransfer_uuid)
 
 ---
 
@@ -213,8 +213,8 @@ All entities extend `Entity` (audit fields: `active`, `created_at`, `updated_at`
 | `PUT` | `/api/v1/movements/:movement_id` | Private | Update a movement (replaces it; the API returns a new `movement_id`) |
 | `DELETE` | `/api/v1/movements/:movement_id` | Private | Soft-delete a movement |
 | `POST` | `/api/v1/upload_files` | Private | Import movements from file |
-| `POST` | `POST /api/v1/movements/transfers/` | Private | Create a transfer (two movements, income and expense whit the same transfer_uuid) |
-| `PUT` | `POST /api/v1/movements/transfers/:transfer_uuid` | Private | Update a transfer (replaces it; the API returns two movements with a new `movement_id`) |
+| `POST` | `POST /api/v1/movements/transfers/` | Private | Create a transfer (two movements, income and expense with the same transfer_uuid) |
+| `PUT` | `POST /api/v1/movements/transfers/:transfer_uuid` | Private | Update a transfer (replaces it and use the same `transfer_uuid`, the API returns two movements with a new `movement_id`) |
 | `DELETE` | `/api/v1/movements/transfers/:transfer_uuid` | Private | Soft-delete a transfer (delete income and expense movement) |
 
 ---
@@ -1197,12 +1197,16 @@ The attribute `user_id` is taken from the JWT `sub` claim. Any `user_id` sent in
 The following fields are ignored by the server:
 - `type`: Automatically set to `type_id: 3` (`Transferencia`).
 - `submovements`: Ignored.
+
 Categories are also assigned automatically:
+
 | Movement | Category |
 |----------|----------|
 | Expense | `category_id: 36` (`Salida por transferencia`) |
 | Income | `category_id: 37` (`Ingreso por transferencia`) |
+
 Both movements share the same `transfer_uuid`, `title`, `description` and —if present— `tags`.
+
 `tags` are supported, but every tag must already exist in the database.
 
 **Auth**: required.
@@ -1344,7 +1348,7 @@ The full movement payload, same shape as `POST /api/v1/movements/transfers`:
 ```json
 {
   "code": 200,
-  "message": "Transferencia creada correctamente",
+  "message": "Transferencia actualizada correctamente",
   "body": [
     {
       "movement_id": 1436,
@@ -1410,7 +1414,7 @@ The full movement payload, same shape as `POST /api/v1/movements/transfers`:
 
 ### `DELETE /api/v1/movements/transfers/:transfer_uuid`
 
-Soft-delete a movement (sets `active = false` and `deleted_at = now`).
+Soft-delete a transfer (sets `active = false` and `deleted_at = now` to both income and expense movements).
 
 **Auth**: required.
 
