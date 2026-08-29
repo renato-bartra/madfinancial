@@ -275,7 +275,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
                 AutoSizeText(
                   amountText,
                   maxLines: 1,
-                  minFontSize: 12,
+                  minFontSize: 10,
                   style: TextStyle(
                     color: amountColor,
                     fontSize: 80,
@@ -284,16 +284,18 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: AutoSizeText(
-                    'PEN',
-                    maxLines: 1,
-                    minFontSize: 12,
-                    style: TextStyle(
-                      color: amountColor.withValues(alpha: 0.7),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: AutoSizeText(
+                      'PEN',
+                      maxLines: 1,
+                      minFontSize: 12,
+                      style: TextStyle(
+                        color: amountColor.withValues(alpha: 0.7),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -359,6 +361,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
             const SizedBox(height: 14),
             TextField(
               controller: _descriptionController,
+              textCapitalization: TextCapitalization.sentences,
               maxLines: 2,
               style: const TextStyle(color: AppColors.onSurface),
               decoration: const InputDecoration(
@@ -817,6 +820,7 @@ class _SubmovementCardState extends State<_SubmovementCard> {
           const SizedBox(height: 10),
           TextField(
             controller: _descController,
+            textCapitalization: TextCapitalization.sentences,
             style: const TextStyle(color: AppColors.onSurface),
             decoration: const InputDecoration(
               isDense: true,
