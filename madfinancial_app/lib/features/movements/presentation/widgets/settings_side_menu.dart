@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../application/providers/movements_providers.dart';
+import '../pages/accounts_page.dart';
 import '../pages/import_file_page.dart';
 
 class SettingsSideMenu extends ConsumerWidget {
@@ -79,6 +81,9 @@ class SettingsSideMenu extends ConsumerWidget {
                         await ref
                             .read(carryOverEnabledProvider.notifier)
                             .setEnabled(v);
+                        await ref
+                            .read(movementsControllerProvider.notifier)
+                            .loadCurrentMonth();
                       },
                       activeThumbColor: AppColors.primary,
                       title: const Text(
@@ -90,7 +95,7 @@ class SettingsSideMenu extends ConsumerWidget {
                         ),
                       ),
                       subtitle: const Text(
-                        'Suma el saldo del mes anterior al actual',
+                        'Suma el saldo acumulado de los meses anteriores al actual',
                         style: TextStyle(
                           color: AppColors.onSurfaceVariant,
                           fontSize: 12,
@@ -106,6 +111,39 @@ class SettingsSideMenu extends ConsumerWidget {
                       height: 1,
                       indent: 20,
                       endIndent: 20,
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: AppColors.primary,
+                      ),
+                      title: const Text(
+                        'Cuentas',
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Crea cuentas, elige la predeterminada y las que verás en inicio',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 4,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AccountsPage(),
+                          ),
+                        );
+                      },
                     ),
                     ListTile(
                       leading: const Icon(

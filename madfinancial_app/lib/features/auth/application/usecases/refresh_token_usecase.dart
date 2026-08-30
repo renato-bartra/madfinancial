@@ -12,10 +12,12 @@ class RefreshTokenUseCase {
     if (session == null) {
       throw const _NoSessionException();
     }
-    return _repository.refreshToken(
+    final newToken = await _repository.refreshToken(
       email: session.email,
       token: session.token,
     );
+    await _sessionManager.updateToken(newToken);
+    return newToken;
   }
 }
 

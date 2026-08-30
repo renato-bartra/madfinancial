@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../dtos/movement_dto.dart';
+import '../dtos/transfer_dto.dart';
 
 class MovementRemoteDataSource {
   const MovementRemoteDataSource(this._dio);
@@ -54,30 +55,67 @@ class MovementRemoteDataSource {
       final response = await _dio.delete<Map<String, dynamic>>(
         '${ApiConstants.movements}$id',
       );
-      final data = response.data;
-      if (data == null) {
-        throw const ApiException('La API devolvió una respuesta vacía.');
-      }
-      final code = (data['code'] as num?)?.toInt();
-      if (code != null && (code < 200 || code >= 300)) {
-        throw ApiException(
-          data['message'] as String? ?? 'No se pudo eliminar el movimiento.',
-          code: code,
-        );
-      }
+      _ensureSuccess(response.data, 'No se pudo eliminar el movimiento.');
     } on DioException catch (error) {
       throw _mapDioError(error, 'No se pudo eliminar el movimiento.');
     }
   }
 
-  List<MovementDto> _parseListResponse(Map<String, dynamic>? data) {
+  Future<List<MovementDto>> createTransfer(TransferRequestDto dto) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        TransferEndpointPaths.transfers,
+        data: dto.toJson(),
+      );
+      return _parseListResponse(
+        response.data,
+        defaultMessage: 'No se pudo crear la transferencia.',
+      );
+    } on DioException catch (error) {
+      throw _mapDioError(error, 'No se pudo crear la transferencia.');
+    }
+  }
+
+  Future<List<MovementDto>> updateTransfer(
+    String transferUuid,
+    TransferRequestDto dto,
+  ) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        TransferEndpointPaths.transferByUuid(transferUuid),
+        data: dto.toJson(),
+      );
+      return _parseListResponse(
+        response.data,
+        defaultMessage: 'No se pudo actualizar la transferencia.',
+      );
+    } on DioException catch (error) {
+      throw _mapDioError(error, 'No se pudo actualizar la transferencia.');
+    }
+  }
+
+  Future<void> deleteTransfer(String transferUuid) async {
+    try {
+      final response = await _dio.delete<Map<String, dynamic>>(
+        TransferEndpointPaths.transferByUuid(transferUuid),
+      );
+      _ensureSuccess(response.data, 'No se pudo eliminar la transferencia.');
+    } on DioException catch (error) {
+      throw _mapDioError(error, 'No se pudo eliminar la transferencia.');
+    }
+  }
+
+  List<MovementDto> _parseListResponse(
+    Map<String, dynamic>? data, {
+    String defaultMessage = 'No se pudieron obtener los movimientos.',
+  }) {
     if (data == null) {
-      throw const ApiException('La API devolvió una respuesta vacía.');
+      throw ApiException(defaultMessage);
     }
     final code = (data['code'] as num?)?.toInt();
     if (code != null && (code < 200 || code >= 300)) {
       throw ApiException(
-        data['message'] as String? ?? 'No se pudieron obtener los movimientos.',
+        data['message'] as String? ?? defaultMessage,
         code: code,
       );
     }
@@ -110,6 +148,19 @@ class MovementRemoteDataSource {
       throw ApiException(defaultMessage);
     }
     return MovementDto.fromJson(body.cast<String, dynamic>());
+  }
+
+  void _ensureSuccess(Map<String, dynamic>? data, String defaultMessage) {
+    if (data == null) {
+      throw ApiException(defaultMessage);
+    }
+    final code = (data['code'] as num?)?.toInt();
+    if (code != null && (code < 200 || code >= 300)) {
+      throw ApiException(
+        data['message'] as String? ?? defaultMessage,
+        code: code,
+      );
+    }
   }
 
   AppException _mapDioError(DioException error, String defaultMessage) {

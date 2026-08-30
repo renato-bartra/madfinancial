@@ -22,6 +22,7 @@ class AuthHttpMiddleware extends QueuedInterceptor {
   final bool Function(String path) _isAuthPath;
 
   Future<String>? _pendingRefresh;
+  bool _sessionInvalidated = false;
 
   @override
   Future<void> onRequest(
@@ -34,6 +35,7 @@ class AuthHttpMiddleware extends QueuedInterceptor {
     final token = await _sessionManager.getToken();
     if (token != null && token.isNotEmpty) {
       options.headers['authorization'] = token;
+      _sessionInvalidated = false;
     }
     handler.next(options);
   }
@@ -46,39 +48,61 @@ class AuthHttpMiddleware extends QueuedInterceptor {
     final statusCode = err.response?.statusCode;
     final options = err.requestOptions;
 
-    if (statusCode != 401 ||
-        options.extra['__retried'] == true ||
-        _isAuthPath(options.path)) {
-      if (statusCode == 401 || statusCode == 403) {
-        await _sessionManager.clearSession();
-      }
+    if (_isAuthPath(options.path)) {
       return handler.next(err);
     }
 
-    try {
-      final newToken = await _getOrStartRefresh();
-      if (newToken.isEmpty) {
+    final alreadyRetried = options.extra['__retried'] == true;
+    if (!alreadyRetried && (statusCode == 401 || statusCode == 403)) {
+      final latestToken = (await _sessionManager.getToken()) ?? '';
+      final requestToken = options.headers['authorization'] as String? ?? '';
+
+      if (latestToken.isNotEmpty && requestToken != latestToken) {
+        return _retryWithToken(options, latestToken, handler);
+      }
+    }
+
+    if (statusCode == 401 && !alreadyRetried) {
+      try {
+        final newToken = await _getOrStartRefresh();
+        await _onTokenRefreshed();
+        options.extra['__retried'] = true;
+        options.headers['authorization'] = newToken;
+        return _retryWithToken(options, newToken, handler);
+      } catch (_) {
         await _handleSessionExpired();
         return handler.next(err);
       }
-      await _onTokenRefreshed();
+    }
 
-      options.extra['__retried'] = true;
-      options.headers['authorization'] = newToken;
-
-      final dio = Dio(BaseOptions(
-        baseUrl: options.baseUrl,
-        connectTimeout: options.connectTimeout,
-        receiveTimeout: options.receiveTimeout,
-        headers: options.headers,
-        responseType: options.responseType,
-        contentType: options.contentType,
-      ));
-      final response = await dio.fetch<dynamic>(options);
-      return handler.resolve(response);
-    } catch (_) {
+    if (statusCode == 401 || statusCode == 403) {
       await _handleSessionExpired();
-      return handler.next(err);
+    }
+    return handler.next(err);
+  }
+
+  Future<void> _retryWithToken(
+    RequestOptions options,
+    String token,
+    ErrorInterceptorHandler handler,
+  ) async {
+    options.extra['__retried'] = true;
+    options.headers['authorization'] = token;
+    try {
+      final retryDio = Dio(
+        BaseOptions(
+          baseUrl: options.baseUrl,
+          connectTimeout: options.connectTimeout,
+          receiveTimeout: options.receiveTimeout,
+          headers: options.headers,
+          responseType: options.responseType,
+          contentType: options.contentType,
+        ),
+      );
+      final response = await retryDio.fetch<dynamic>(options);
+      return handler.resolve(response);
+    } on DioException catch (retryError) {
+      return handler.next(retryError);
     }
   }
 
@@ -93,8 +117,14 @@ class AuthHttpMiddleware extends QueuedInterceptor {
   }
 
   Future<void> _handleSessionExpired() async {
+    if (_sessionInvalidated) return;
+    _sessionInvalidated = true;
     _pendingRefresh = null;
-    await _sessionManager.clearSession();
-    await _onSessionExpired();
+    try {
+      await _sessionManager.clearSession();
+    } catch (_) {}
+    try {
+      await _onSessionExpired();
+    } catch (_) {}
   }
 }

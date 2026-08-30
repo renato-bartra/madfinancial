@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../application/category_catalog.dart';
 import '../../application/providers/movements_providers.dart';
@@ -14,6 +15,7 @@ import '../../domain/entities/movement_type.dart';
 import '../../domain/entities/submovement.dart';
 import '../../domain/entities/tag.dart';
 import '../pages/category_picker_page.dart';
+import '../widgets/account_picker_dialog.dart';
 import '../widgets/tag_picker_dialog.dart';
 
 class MovementFormPage extends ConsumerStatefulWidget {
@@ -42,6 +44,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
   late DateTime _accountingDate;
   late List<Tag> _selectedTags;
   late List<_SubDraft> _subDrafts;
+  late Account? _selectedAccount;
   bool _saving = false;
   late final int _placeholderId;
 
@@ -58,6 +61,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
     _subDrafts = (initial?.submovements ?? const [])
         .map((s) => _SubDraft.fromEntity(s))
         .toList();
+    _selectedAccount = initial?.account;
     _placeholderId = DateTime.now().millisecondsSinceEpoch;
     _titleController.addListener(_onTitleChanged);
     _titleFocus.addListener(_onTitleFocusChanged);
@@ -109,6 +113,18 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
     );
     if (selected != null) {
       setState(() => draft.subcategory = selected);
+    }
+  }
+
+  Future<void> _pickAccount() async {
+    final result = await AccountPickerDialog.show(
+      context,
+      mode: AccountPickerMode.single,
+      selectedAccountId: _selectedAccount?.id,
+      title: 'Cuentas',
+    );
+    if (result?.account != null && mounted) {
+      setState(() => _selectedAccount = result!.account);
     }
   }
 
@@ -178,8 +194,13 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
       id: widget.isIncome ? 1 : 2,
       description: widget.isIncome ? 'Ingreso' : 'Gasto',
     );
+    final defaultAccountId = ref.read(defaultAccountIdProvider);
     final account = widget.initial?.account ??
-        const Account(id: 1, description: 'Sueldo');
+        _selectedAccount ??
+        Account(
+          id: defaultAccountId,
+          description: defaultAccountId == 1 ? 'Sueldo' : 'Ahorros',
+        );
 
     final submovements = _subDrafts
         .map(
@@ -205,6 +226,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
       account: account,
       tags: _selectedTags,
       submovements: submovements,
+      transferUuid: widget.initial?.transferUuid,
     );
 
     try {
@@ -226,6 +248,7 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
           account: movement.account,
           tags: movement.tags,
           submovements: movement.submovements,
+          transferUuid: movement.transferUuid,
         );
         await ref
             .read(movementsControllerProvider.notifier)
@@ -305,6 +328,11 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
             _CategoryChip(
               category: _category,
               onTap: _pickCategory,
+            ),
+            const SizedBox(height: 14),
+            _AccountChip(
+              account: _selectedAccount,
+              onTap: _pickAccount,
             ),
             const SizedBox(height: 18),
             TypeAheadField<String>(
@@ -500,6 +528,53 @@ class _CategoryChip extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountChip extends StatelessWidget {
+  const _AccountChip({required this.account, required this.onTap});
+  final Account? account;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = account?.description ?? 'Elegir cuenta';
+    return Center(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.35),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: AppColors.onSurface,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
             ],
           ),
         ),

@@ -104,6 +104,7 @@ class MovementDto {
     required this.account,
     required this.tags,
     required this.submovements,
+    required this.transferUuid,
   });
 
   final int id;
@@ -117,8 +118,11 @@ class MovementDto {
   final AccountDto account;
   final List<TagDto> tags;
   final List<SubmovementDto> submovements;
+  final String? transferUuid;
 
   factory MovementDto.fromJson(Map<String, dynamic> json) {
+    final rawUuid = json['transfer_uuid'] as String? ?? '';
+    final normalizedUuid = rawUuid.isEmpty ? null : rawUuid;
     return MovementDto(
       id: (json['movement_id'] as num).toInt(),
       userId: (json['user_id'] as num).toInt(),
@@ -135,6 +139,7 @@ class MovementDto {
       submovements: _readList(
         json['submovements'],
       ).map((item) => SubmovementDto.fromJson(_readMap(item))).toList(),
+      transferUuid: normalizedUuid,
     );
   }
 
@@ -151,6 +156,7 @@ class MovementDto {
       'account': account.toJson(),
       'tags': tags.map((t) => t.toJson()).toList(),
       'submovements': submovements.map((s) => s.toJson()).toList(),
+      'transfer_uuid': '',
     };
   }
 
@@ -167,6 +173,7 @@ class MovementDto {
       'account': account.toJson(),
       'tags': tags.map((t) => t.toJson()).toList(),
       'submovements': submovements.map((s) => s.toJson()).toList(),
+      'transfer_uuid': transferUuid ?? '',
     };
   }
 }

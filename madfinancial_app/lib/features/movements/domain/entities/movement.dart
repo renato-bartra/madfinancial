@@ -19,6 +19,7 @@ class Movement extends Equatable {
     required this.account,
     required this.tags,
     required this.submovements,
+    this.transferUuid,
   });
 
   final int id;
@@ -32,10 +33,26 @@ class Movement extends Equatable {
   final Account account;
   final List<Tag> tags;
   final List<Submovement> submovements;
+  final String? transferUuid;
+
+  bool get isTransfer => transferUuid != null && transferUuid!.isNotEmpty;
 
   bool get isIncome => type.isIncome;
 
-  double get signedAmount => isIncome ? amount.abs() : -amount.abs();
+  bool get isExpense => type.isExpense;
+
+  /// `true` when this movement leaves its account.
+  /// For transfers: derived from category (Salida / Ingreso por transferencia).
+  /// For normal movements: derived from the expense flag.
+  bool get isOutgoing {
+    if (isTransfer) return category.isExpenseCategory;
+    return !isIncome;
+  }
+
+  double get signedAmount {
+    if (isTransfer) return isOutgoing ? -amount.abs() : amount.abs();
+    return isIncome ? amount.abs() : -amount.abs();
+  }
 
   @override
   List<Object?> get props => [
@@ -50,5 +67,6 @@ class Movement extends Equatable {
     account,
     tags,
     submovements,
+    transferUuid,
   ];
 }

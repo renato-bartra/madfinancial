@@ -7,9 +7,11 @@ import '../../../../core/services/settings_service.dart';
 import '../../../../core/services/token_refresh_notifier.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../application/providers/movements_providers.dart';
+import '../../domain/entities/transfer.dart';
 import '../../domain/entities/movement.dart';
 import '../pages/category_picker_page.dart';
 import '../pages/movement_detail_page.dart';
+import '../pages/transfer_form_page.dart';
 import '../widgets/calculator_sheet.dart';
 import '../widgets/day_group_header.dart';
 import '../widgets/month_summary_header.dart';
@@ -33,9 +35,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
     Future.microtask(() async {
       await ref.read(carryOverEnabledProvider.notifier).hydrate();
+      await ref.read(defaultAccountIdProvider.notifier).hydrate();
+      await ref.read(homeAccountIdsProvider.notifier).hydrate();
       await ref.read(movementsControllerProvider.notifier).loadCurrentMonth();
     });
-    // Consume a refresh that may have happened during the splash probe.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_consumedInitialRefresh &&
@@ -76,6 +79,59 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _openTransferFlow() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final accounts = await ref.read(accountsProvider.future);
+    if (accounts.length < 2) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Necesitas al menos dos cuentas para crear una transferencia.',
+          ),
+        ),
+      );
+      return;
+    }
+    final initialOut = accounts.firstWhere(
+      (a) => a.id == 1,
+      orElse: () => accounts.first,
+    );
+    final initialIn = accounts.firstWhere(
+      (a) => a.id == 2,
+      orElse: () => accounts[1],
+    );
+    if (!mounted) return;
+    final result = await TransferCalculatorSheet.show(
+      context,
+      accountOut: initialOut,
+      accountIn: initialIn,
+    );
+    if (result == null || !mounted) return;
+    final draft = TransferDraft(
+      amount: result.amount,
+      accountingDate: DateTime.now(),
+      title: '',
+      description: '',
+      accountOut: result.accountOut,
+      accountIn: result.accountIn,
+      tags: const [],
+    );
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => TransferFormPage(
+          draft: draft,
+          amount: result.amount,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transferencia guardada')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(movementsControllerProvider);
@@ -103,6 +159,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ref.invalidate(currentUserIdProvider);
               ref.invalidate(categoriesProvider);
               ref.invalidate(tagsProvider);
+              ref.invalidate(accountsProvider);
               if (!context.mounted) return;
               Navigator.of(context).pushReplacementNamed('/login');
             },
@@ -132,8 +189,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               FloatingActionButton(
                 heroTag: null,
                 backgroundColor: AppColors.purple,
+                onPressed: _openTransferFlow,
                 child: const Icon(Icons.currency_exchange),
-                onPressed: () {},
               ),
             ],
           ),

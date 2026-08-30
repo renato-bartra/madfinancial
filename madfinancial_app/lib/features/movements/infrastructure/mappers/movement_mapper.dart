@@ -57,6 +57,7 @@ extension MovementMapper on MovementDto {
       submovements: submovements
           .map((submovement) => submovement.toEntity())
           .toList(),
+      transferUuid: transferUuid,
     );
   }
 }
@@ -101,6 +102,7 @@ extension MovementToDto on Movement {
             ),
           )
           .toList(),
+      transferUuid: transferUuid,
     );
   }
 }

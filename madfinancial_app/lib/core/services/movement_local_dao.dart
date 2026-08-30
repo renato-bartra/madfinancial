@@ -16,7 +16,10 @@ class MovementLocalDao {
 
   Future<Database> get _db => _storage.rawDb;
 
-  Future<List<Movement>> getMovementsByMonth(DateTime month) async {
+  Future<List<Movement>> getMovementsByMonth(
+    DateTime month, {
+    Set<int>? accountIds,
+  }) async {
     final db = await _db;
     final firstDay = DateTime(month.year, month.month, 1);
     final firstDayNext = DateTime(month.year, month.month + 1, 1);
@@ -25,13 +28,44 @@ class MovementLocalDao {
     final endIso =
         '${firstDayNext.year.toString().padLeft(4, '0')}-${firstDayNext.month.toString().padLeft(2, '0')}-${firstDayNext.day.toString().padLeft(2, '0')}';
 
+    final where = StringBuffer(
+      'accounting_date >= ? AND accounting_date < ?',
+    );
+    final args = <Object?>[startIso, endIso];
+    final filter = (accountIds == null) ? const <int>{} : accountIds;
+    if (filter.isNotEmpty) {
+      final placeholders = List.filled(filter.length, '?').join(',');
+      where.write(' AND account_id IN ($placeholders)');
+      args.addAll(filter);
+    } else if (accountIds != null && filter.isEmpty) {
+      return const <Movement>[];
+    }
+
     final rows = await db.query(
       StorageConstants.movementsTable,
-      where: 'accounting_date >= ? AND accounting_date < ?',
-      whereArgs: [startIso, endIso],
+      where: where.toString(),
+      whereArgs: args,
       orderBy: 'accounting_date DESC, id DESC',
     );
 
+    final result = <Movement>[];
+    for (final row in rows) {
+      final id = row['id'] as int;
+      final tags = await _loadMovementTags(db, id);
+      final submovements = await _loadSubmovements(db, id);
+      result.add(_rowToMovement(row, tags, submovements));
+    }
+    return result;
+  }
+
+  Future<List<Movement>> getMovementsByTransferUuid(String uuid) async {
+    final db = await _db;
+    final rows = await db.query(
+      StorageConstants.movementsTable,
+      where: 'transfer_uuid = ?',
+      whereArgs: [uuid],
+      orderBy: 'id ASC',
+    );
     final result = <Movement>[];
     for (final row in rows) {
       final id = row['id'] as int;
@@ -57,6 +91,63 @@ class MovementLocalDao {
     );
     final count = (result.first['c'] as int?) ?? 0;
     return count > 0;
+  }
+
+  /// Sum of `Movement.signedAmount` for every locally cached movement strictly
+  /// before [beforeMonth], optionally restricted to [accountIds].
+  ///
+  /// The math mirrors the controller's `signedAmount`:
+  /// - Normal income: positive
+  /// - Normal expense: negative
+  /// - Transfer outgoing (category_type = 1): negative
+  /// - Transfer incoming (category_type = 0): positive
+  Future<double> getBalanceBeforeMonth(
+    DateTime beforeMonth, {
+    Set<int>? accountIds,
+  }) async {
+    final db = await _db;
+    final firstDay = DateTime(beforeMonth.year, beforeMonth.month, 1);
+    final cutoffIso =
+        '${firstDay.year.toString().padLeft(4, '0')}-'
+        '${firstDay.month.toString().padLeft(2, '0')}-'
+        '${firstDay.day.toString().padLeft(2, '0')}';
+
+    final where = StringBuffer('accounting_date < ?');
+    final args = <Object?>[cutoffIso];
+    if (accountIds != null) {
+      if (accountIds.isEmpty) return 0;
+      final placeholders = List.filled(accountIds.length, '?').join(',');
+      where.write(' AND account_id IN ($placeholders)');
+      args.addAll(accountIds);
+    }
+
+    final rows = await db.query(
+      StorageConstants.movementsTable,
+      columns: [
+        'amount',
+        'type_id',
+        'type_description',
+        'category_is_expense',
+      ],
+      where: where.toString(),
+      whereArgs: args,
+    );
+
+    double total = 0;
+    for (final row in rows) {
+      final amount = (row['amount'] as num).toDouble();
+      final typeId = row['type_id'] as int;
+      final typeDescription = row['type_description'] as String? ?? '';
+      final categoryIsExpense = (row['category_is_expense'] as int) == 1;
+      final isTransfer =
+          typeId == 3 || typeDescription.toLowerCase().contains('transfer');
+      if (isTransfer) {
+        total += categoryIsExpense ? -amount.abs() : amount.abs();
+      } else {
+        total += typeId == 1 ? amount.abs() : -amount.abs();
+      }
+    }
+    return total;
   }
 
   Future<void> saveMovement(Movement movement) async {
@@ -109,6 +200,7 @@ class MovementLocalDao {
           });
         }
       }
+      await _upsertAccount(txn, movement.account);
     });
   }
 
@@ -163,6 +255,7 @@ class MovementLocalDao {
             });
           }
         }
+        await _upsertAccount(txn, movement.account);
       }
     });
   }
@@ -196,6 +289,114 @@ class MovementLocalDao {
   Future<void> replaceMovement(int oldId, Movement newMovement) async {
     await deleteMovement(oldId);
     await saveMovement(newMovement);
+  }
+
+  Future<void> replaceTransferByUuid(
+    String uuid,
+    List<Movement> replacements,
+  ) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      final ids = await txn.query(
+        StorageConstants.movementsTable,
+        columns: ['id'],
+        where: 'transfer_uuid = ?',
+        whereArgs: [uuid],
+      );
+      for (final row in ids) {
+        final movementId = row['id'] as int;
+        await txn.delete(
+          StorageConstants.movementTagsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+        await txn.delete(
+          StorageConstants.submovementTagsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+        await txn.delete(
+          StorageConstants.submovementsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+      }
+      await txn.delete(
+        StorageConstants.movementsTable,
+        where: 'transfer_uuid = ?',
+        whereArgs: [uuid],
+      );
+      for (final movement in replacements) {
+        await txn.insert(
+          StorageConstants.movementsTable,
+          _movementToRow(movement),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        for (final tag in movement.tags) {
+          await txn.insert(StorageConstants.movementTagsTable, {
+            'movement_id': movement.id,
+            'tag_id': tag.id,
+            'tag_description': tag.description,
+          });
+        }
+        for (final sub in movement.submovements) {
+          await txn.insert(StorageConstants.submovementsTable, {
+            'id': sub.id,
+            'movement_id': movement.id,
+            'description': sub.description,
+            'amount': sub.amount,
+            'category_id': sub.subcategory.id,
+            'category_is_expense': sub.subcategory.isExpenseCategory ? 1 : 0,
+            'category_description': sub.subcategory.description,
+            'category_icon_name': sub.subcategory.iconName,
+          });
+          for (final tag in sub.tags) {
+            await txn.insert(StorageConstants.submovementTagsTable, {
+              'submovement_id': sub.id,
+              'movement_id': movement.id,
+              'tag_id': tag.id,
+              'tag_description': tag.description,
+            });
+          }
+        }
+        await _upsertAccount(txn, movement.account);
+      }
+    });
+  }
+
+  Future<void> deleteMovementsByTransferUuid(String uuid) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      final ids = await txn.query(
+        StorageConstants.movementsTable,
+        columns: ['id'],
+        where: 'transfer_uuid = ?',
+        whereArgs: [uuid],
+      );
+      for (final row in ids) {
+        final movementId = row['id'] as int;
+        await txn.delete(
+          StorageConstants.movementTagsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+        await txn.delete(
+          StorageConstants.submovementTagsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+        await txn.delete(
+          StorageConstants.submovementsTable,
+          where: 'movement_id = ?',
+          whereArgs: [movementId],
+        );
+      }
+      await txn.delete(
+        StorageConstants.movementsTable,
+        where: 'transfer_uuid = ?',
+        whereArgs: [uuid],
+      );
+    });
   }
 
   Future<void> clearMovements() async {
@@ -291,6 +492,50 @@ class MovementLocalDao {
     });
   }
 
+  Future<List<Account>> getAllAccounts() async {
+    final db = await _db;
+    final rows = await db.query(
+      StorageConstants.accountsTable,
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map(
+          (row) => Account(
+            id: row['id'] as int,
+            description: row['description'] as String,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> saveAllAccounts(List<Account> accounts) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      for (final acc in accounts) {
+        await txn.insert(
+          StorageConstants.accountsTable,
+          {'id': acc.id, 'description': acc.description},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> saveAccount(Account account) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await _upsertAccount(txn, account);
+    });
+  }
+
+  Future<void> _upsertAccount(DatabaseExecutor txn, Account account) async {
+    await txn.insert(
+      StorageConstants.accountsTable,
+      {'id': account.id, 'description': account.description},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   Future<List<Tag>> _loadMovementTags(Database db, int movementId) async {
     final rows = await db.query(
       StorageConstants.movementTagsTable,
@@ -369,6 +614,7 @@ class MovementLocalDao {
       'category_icon_name': movement.category.iconName,
       'account_id': movement.account.id,
       'account_description': movement.account.description,
+      'transfer_uuid': movement.transferUuid,
     };
   }
 
@@ -377,6 +623,9 @@ class MovementLocalDao {
     List<Tag> tags,
     List<Submovement> submovements,
   ) {
+    final rawUuid = row['transfer_uuid'] as String?;
+    final normalizedUuid =
+        (rawUuid == null || rawUuid.isEmpty) ? null : rawUuid;
     return Movement(
       id: row['id'] as int,
       userId: row['user_id'] as int,
@@ -400,6 +649,7 @@ class MovementLocalDao {
       ),
       tags: tags,
       submovements: submovements,
+      transferUuid: normalizedUuid,
     );
   }
 }

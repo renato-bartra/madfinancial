@@ -18,10 +18,20 @@ class MovementListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = CategoryCatalog.lookup(movement.category);
+    final isTransfer = movement.isTransfer;
+    final style = isTransfer
+        ? const CategoryStyle(
+            icon: Icons.currency_exchange,
+            color: AppColors.purple,
+          )
+        : CategoryCatalog.lookup(movement.category);
     final tags = movement.tags;
     final shownTags = tags.take(3).toList();
     final extraTags = tags.length - shownTags.length;
+    final subtitle = '${movement.category.description} · ${movement.account.description}';
+    // final subtitle = isTransfer
+    //     ? '${movement.account.description} · ${movement.transferUuid}'
+    //     : '${movement.category.description} · ${movement.account.description}';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -62,7 +72,7 @@ class MovementListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${movement.category.description} · ${movement.account.description}',
+                        subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
