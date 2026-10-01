@@ -312,93 +312,97 @@ class _TransferCalculatorSheetState extends State<TransferCalculatorSheet> {
             20,
             20 + mediaQuery.viewInsets.bottom,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 6),
-              _TransferAccountRow(
-                side: _TransferSide.outgoing,
-                account: _accountOut,
-                onTap: () async {
-                  final updated = await _pickAccount(
-                    excludeId: _accountIn.id,
-                  );
-                  if (updated != null) setState(() => _accountOut = updated);
-                },
-              ),
-              const Icon(
-                Icons.arrow_downward_rounded,
-                color: AppColors.primary,
-                size: 32,
-              ),
-              _TransferAccountRow(
-                side: _TransferSide.incoming,
-                account: _accountIn,
-                onTap: () async {
-                  final updated = await _pickAccount(
-                    excludeId: _accountOut.id,
-                  );
-                  if (updated != null) setState(() => _accountIn = updated);
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _value == 0 ? '0' : _formatValue(_value),
-                        style: const TextStyle(
-                          color: AppColors.expense,
-                          fontSize: 60,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -2,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.zero,
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 6),
+                _TransferAccountRow(
+                  side: _TransferSide.outgoing,
+                  account: _accountOut,
+                  onTap: () async {
+                    final updated = await _pickAccount(
+                      excludeId: _accountIn.id,
+                    );
+                    if (updated != null) setState(() => _accountOut = updated);
+                  },
+                ),
+                const Icon(
+                  Icons.arrow_downward_rounded,
+                  color: AppColors.primary,
+                  size: 32,
+                ),
+                _TransferAccountRow(
+                  side: _TransferSide.incoming,
+                  account: _accountIn,
+                  onTap: () async {
+                    final updated = await _pickAccount(
+                      excludeId: _accountOut.id,
+                    );
+                    if (updated != null) setState(() => _accountIn = updated);
+                  },
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _value == 0 ? '0' : _formatValue(_value),
+                          style: const TextStyle(
+                            color: AppColors.expense,
+                            fontSize: 60,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      'PEN',
-                      style: TextStyle(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                    const SizedBox(width: 8),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'PEN',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Numpad(
-                onDigit: _appendDigit,
-                onDot: _appendDot,
-                onBackspace: _backspace,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 56,
-                child: FilledButton(
-                  onPressed: _canContinue ? _confirm : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onSurface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _Numpad(
+                  onDigit: _appendDigit,
+                  onDot: _appendDot,
+                  onBackspace: _backspace,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: _canContinue ? _confirm : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: const Text(
+                      'Continuar',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),
-                  child: const Text(
-                    'Continuar',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

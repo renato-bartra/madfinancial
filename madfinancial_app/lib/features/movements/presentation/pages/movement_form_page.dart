@@ -295,16 +295,21 @@ class _MovementFormPageState extends ConsumerState<MovementFormPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                AutoSizeText(
-                  amountText,
-                  maxLines: 1,
-                  minFontSize: 10,
-                  style: TextStyle(
-                    color: amountColor,
-                    fontSize: 80,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -2,
-                  ),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: AutoSizeText(
+                      amountText,
+                      maxLines: 1,
+                      minFontSize: 8,
+                      style: TextStyle(
+                        color: amountColor,
+                        fontSize: 80,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -2,
+                      ),
+                    ),
+                  )
                 ),
                 const SizedBox(width: 8),
                 Flexible(
